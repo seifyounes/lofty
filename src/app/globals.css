@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #07041a;
+  color: #fff;
+  font-family: var(--font-nunito), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Galaxy background animations (ported from Galaxy.dc.html) */
+@keyframes lofty-tw {
+  0%, 100% { opacity: 0.18; }
+  50% { opacity: 1; }
+}
+@keyframes lofty-drift1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(46px, 30px) scale(1.16); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes lofty-drift2 {
+  0% { transform: translate(0, 0) scale(1.12); }
+  50% { transform: translate(-54px, 24px) scale(1); }
+  100% { transform: translate(0, 0) scale(1.12); }
+}
+@keyframes lofty-drift3 {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(34px, -28px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes lofty-starfield {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-46px); }
+}
+@keyframes lofty-shoot {
+  0% { transform: translate(0, 0) rotate(20deg); opacity: 0; }
+  2% { opacity: 0; }
+  4% { opacity: 1; }
+  11% { opacity: 1; }
+  16% { transform: translate(560px, 205px) rotate(20deg); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* Balloon "pop" used when an idea is marked done on the Focus screen */
+@keyframes lofty-pop {
+  0% { transform: scale(1); opacity: 1; }
+  35% { transform: scale(1.16); opacity: 1; }
+  100% { transform: scale(0.15); opacity: 0; }
+}
+.lofty-pop {
+  animation: lofty-pop 420ms ease-in forwards;
+}
+
+/* Note: motion is intentional throughout (the wall physics field + living
+   nebula), so we deliberately do NOT disable it under prefers-reduced-motion. */
+
+/* Slow zoom/pan of the wall nebula for a living, deep background */
+@keyframes lofty-kenburns {
+  0% { transform: scale(1.08) translate(0%, 0%); }
+  100% { transform: scale(1.16) translate(-2%, -1.4%); }
+}

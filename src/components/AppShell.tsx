@@ -5,12 +5,10 @@
 // screen. The active route drives the pill toggle / New-idea highlight.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import Galaxy from "./Galaxy";
 import WallBackground from "./WallBackground";
 import NewIdeaButton from "./NewIdeaButton";
-
-const FREDOKA = "var(--font-fredoka), sans-serif";
 
 const TABS = [
   { label: "Wall", href: "/wall" },
@@ -30,18 +28,6 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
   const pathname = usePathname() || "/wall";
   const overlay = OVERLAY[pathname] ?? 0.3;
   const onNew = pathname === "/new";
-
-  const tab = (active: boolean): CSSProperties => ({
-    padding: "6px 15px",
-    borderRadius: 999,
-    fontFamily: FREDOKA,
-    fontWeight: active ? 600 : 500,
-    fontSize: 14,
-    color: active ? "#fff" : "rgba(255,255,255,0.6)",
-    background: active ? "rgba(255,255,255,0.16)" : "transparent",
-    textDecoration: "none",
-    transition: "color 120ms, background 120ms",
-  });
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", color: "#fff", background: "#07041a" }}>
@@ -65,9 +51,13 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
             <img src="/lofty-logo.png" alt="Lofty" style={{ height: 60, width: "auto", display: "block" }} />
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <nav style={{ display: "flex", background: "rgba(255,255,255,0.08)", borderRadius: 999, padding: 4 }}>
+            <nav className="lofty-tabs">
               {TABS.map((t) => (
-                <Link key={t.href} href={t.href} style={tab(pathname === t.href)}>
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  className={`lofty-tab${pathname === t.href ? " lofty-tab--active" : ""}`}
+                >
                   {t.label}
                 </Link>
               ))}

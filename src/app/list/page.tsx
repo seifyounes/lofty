@@ -6,7 +6,9 @@ import AppShell from "@/components/AppShell";
 import Balloon from "@/components/Balloon";
 import { useIdeas } from "@/lib/useIdeas";
 import { bigToPx, daysLeft, formatDue, sizeTag } from "@/lib/format";
+import { getBalloon } from "@/lib/balloons";
 import type { Idea } from "@/lib/types";
+import type { CSSProperties } from "react";
 
 const FREDOKA = "var(--font-fredoka), sans-serif";
 const NUNITO = "var(--font-nunito), sans-serif";
@@ -36,7 +38,7 @@ export default function ListPage() {
               Size shows how big the idea is. Priority to finish &amp; deadline sit on the right.
             </div>
           </div>
-          <div style={{ display: "flex", background: "rgba(255,255,255,0.08)", borderRadius: 999, padding: 4 }}>
+          <div className="lofty-tabs">
             <SortBtn active={sort === "size"} onClick={() => setSort("size")}>Biggest</SortBtn>
             <SortBtn active={sort === "priority"} onClick={() => setSort("priority")}>Priority</SortBtn>
           </div>
@@ -66,20 +68,7 @@ export default function ListPage() {
 
 function SortBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "6px 15px",
-        borderRadius: 999,
-        border: "none",
-        cursor: "pointer",
-        fontFamily: FREDOKA,
-        fontWeight: active ? 600 : 500,
-        fontSize: 14,
-        color: active ? "#fff" : "rgba(255,255,255,0.6)",
-        background: active ? "rgba(255,255,255,0.16)" : "transparent",
-      }}
-    >
+    <button onClick={onClick} className={`lofty-tab${active ? " lofty-tab--active" : ""}`}>
       {children}
     </button>
   );
@@ -102,18 +91,18 @@ function Row({
   urgent: boolean;
   onDelete: () => void;
 }) {
+  const swatch = getBalloon(idea.balloon).swatch;
   return (
     <div
+      className="lofty-card3d"
       style={{
+        ["--accent" as string]: swatch,
         display: "flex",
         alignItems: "center",
         gap: 18,
-        padding: "9px 20px",
-        borderRadius: 15,
-        background: "rgba(18,14,44,0.55)",
-        border: "1px solid rgba(255,255,255,0.09)",
-        marginBottom: 10,
-      }}
+        padding: "9px 20px 9px 24px",
+        marginBottom: 12,
+      } as CSSProperties}
     >
       <div style={{ width: 34, textAlign: "center", fontFamily: FREDOKA, fontWeight: 700, fontSize: 22, color: "rgba(255,255,255,0.28)" }}>
         {rank}
@@ -125,7 +114,7 @@ function Row({
         <div style={{ fontFamily: FREDOKA, fontWeight: 600, fontSize: 18, color: "#fff" }}>{idea.name}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 7 }}>
           <div style={{ width: 130, height: 6, borderRadius: 6, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${barPct}%`, borderRadius: 6, background: "linear-gradient(90deg,#46E0FF,#A06BFF)" }} />
+            <div style={{ height: "100%", width: `${barPct}%`, borderRadius: 6, background: `linear-gradient(90deg, ${swatch}, ${swatch}aa)`, boxShadow: `0 0 10px ${swatch}aa` }} />
           </div>
           <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{sizeTag(idea.big)}</div>
         </div>
@@ -137,8 +126,9 @@ function Row({
             fontWeight: 700,
             fontSize: 13,
             color: "#fff",
-            background: "rgba(160,107,255,0.22)",
-            border: "1px solid rgba(160,107,255,0.5)",
+            background: `${swatch}2e`,
+            border: `1px solid ${swatch}99`,
+            boxShadow: `0 0 12px ${swatch}44, inset 0 1px 0 rgba(255,255,255,0.18)`,
             padding: "4px 12px",
             borderRadius: 999,
             display: "inline-block",

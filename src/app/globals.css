@@ -175,3 +175,89 @@ body {
   width: 16px;
   height: 16px;
 }
+
+/* ── Shared 3D + colour chrome (tabs, cards, buttons) ─────────────────────── */
+/* Segmented pill toggle — used by the nav and the list sort switch. */
+.lofty-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), inset 0 -1px 1px rgba(255, 255, 255, 0.06);
+}
+.lofty-tab {
+  padding: 6px 15px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--font-fredoka), sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 140ms ease, transform 140ms ease;
+}
+.lofty-tab:hover { color: #fff; }
+.lofty-tab--active {
+  color: #fff;
+  font-weight: 600;
+  background-image: linear-gradient(160deg, #ff67d8, #8d45ff 55%, #4d6dff);
+  box-shadow:
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.5),
+    inset 0 -3px 5px rgba(40, 0, 80, 0.45),
+    0 3px 10px rgba(141, 69, 255, 0.5);
+}
+
+/* Raised, colour-coded card (list rows). `--accent` = the idea's balloon colour. */
+.lofty-card3d {
+  --accent: #a06bff;
+  position: relative;
+  isolation: isolate;
+  border-radius: 16px;
+  background: rgba(18, 14, 44, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 24px rgba(0, 0, 0, 0.42),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.lofty-card3d::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 4px;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  opacity: 0.9;
+}
+.lofty-card3d:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 18px 36px rgba(0, 0, 0, 0.5),
+    0 3px 6px rgba(0, 0, 0, 0.35),
+    0 0 22px -6px var(--accent);
+}
+
+/* Tactile lift/press for buttons that keep their own colours. */
+.lofty-press { transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease; }
+.lofty-press:hover { transform: translateY(-1.5px); filter: brightness(1.07) saturate(1.04); }
+.lofty-press:active { transform: translateY(1px) scale(0.985); }
+
+/* Frosted 3D panel (deadlines controls). */
+.lofty-glass {
+  border-radius: 18px;
+  background: rgba(16, 12, 40, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 16px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}

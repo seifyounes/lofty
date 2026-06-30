@@ -89,7 +89,7 @@ function Focus() {
     <div style={{ position: "relative", flex: 1, padding: "8px 24px 24px" }}>
       <Stage width={STAGE_W} height={STAGE_H}>
         {/* left text + controls */}
-        <div style={{ position: "absolute", left: 64, top: 150 - NAV, width: 360 }}>
+        <div className="lofty-glass" style={{ position: "absolute", left: 64, top: 150 - NAV, width: 360, padding: "22px 24px 20px" }}>
           <div style={{ fontFamily: NUNITO, fontWeight: 800, fontSize: 12, letterSpacing: 2, color: "rgba(255,255,255,0.45)", textTransform: "uppercase" }}>
             Priority #{idea.priority} &middot; {idea.name}
           </div>
@@ -104,23 +104,25 @@ function Focus() {
           <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
             <button
               onClick={progress}
+              className="lofty-press"
               style={{
                 padding: "11px 18px",
                 borderRadius: 12,
-                border: "1px solid rgba(70,224,255,0.5)",
-                background: "rgba(70,224,255,0.16)",
+                border: "1px solid rgba(70,224,255,0.6)",
+                background: "linear-gradient(160deg, rgba(70,224,255,0.36), rgba(70,224,255,0.12))",
                 color: "#fff",
                 fontFamily: FREDOKA,
                 fontWeight: 600,
                 fontSize: 14,
                 cursor: "pointer",
-                boxShadow: "0 0 16px rgba(70,224,255,0.25)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 16px rgba(70,224,255,0.35)",
               }}
             >
               Made progress
             </button>
             <button
               onClick={done}
+              className="lofty-press"
               style={{
                 padding: "11px 18px",
                 borderRadius: 12,
@@ -131,7 +133,7 @@ function Focus() {
                 fontWeight: 600,
                 fontSize: 14,
                 cursor: "pointer",
-                boxShadow: "0 8px 22px rgba(160,107,255,0.45)",
+                boxShadow: "inset 0 1.5px 1px rgba(255,255,255,0.42), inset 0 -3px 6px rgba(60,0,90,0.4), 0 8px 22px rgba(160,107,255,0.5)",
               }}
             >
               Mark done

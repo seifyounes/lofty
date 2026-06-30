@@ -72,7 +72,12 @@ export default function Balloon({
           position: "relative",
           width: w,
           height: h,
-          filter: `drop-shadow(0 0 ${Math.max(4, w * 0.09)}px ${alpha(b.swatch, 0.65)})`,
+          // 3D pop: soft dark contact shadow + a tight bright colour glow + a wide soft halo.
+          filter: [
+            `drop-shadow(0 ${Math.max(2, w * 0.03)}px ${Math.max(3, w * 0.05)}px rgba(0,0,0,0.45))`,
+            `drop-shadow(0 0 ${Math.max(5, w * 0.1)}px ${alpha(b.swatch, 0.75)})`,
+            `drop-shadow(0 0 ${Math.max(10, w * 0.22)}px ${alpha(b.swatch, 0.4)})`,
+          ].join(" "),
         }}
       >
         <img src={b.src} alt={label ? `${label} balloon` : "idea balloon"} style={{ display: "block", width: w, height: "auto" }} />

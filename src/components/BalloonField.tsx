@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bodies, Body, Composite, Engine, Events, Mouse, MouseConstraint } from "matter-js";
 import Balloon from "./Balloon";
-import { bigToPx } from "@/lib/format";
+import { bigToPx, deflateScale } from "@/lib/format";
 import type { Idea } from "@/lib/types";
 
 const DESIGN_W = 1200;
@@ -78,7 +78,9 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
     Composite.add(engine.world, walls);
 
     const bodies = ideas.map((idea, i) => {
-      const dsize = bigToPx(idea.big) * scale;
+      // Balloons shrink as their idea makes progress (same deflate as Focus), so
+      // the physics body, the rendered art and the hit-test all use this size.
+      const dsize = bigToPx(idea.big) * deflateScale(idea.progress) * scale;
       const [tlx, tly] = curated(i);
       const cx = (tlx + bigToPx(idea.big) / 2) * scale + offX;
       const cy = (tly + bigToPx(idea.big) * ASPECT * ANCHOR) * scale + offY;
@@ -166,7 +168,7 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
     for (const idea of ideas) {
       const node = domRefs.current.get(idea.id);
       if (!node) continue;
-      const ds = bigToPx(idea.big) * scale;
+      const ds = bigToPx(idea.big) * deflateScale(idea.progress) * scale;
       const mm = /translate\(([-0-9.]+)px,\s*([-0-9.]+)px\)/.exec(node.style.transform);
       if (!mm) continue;
       const cx = parseFloat(mm[1]) + ds / 2;
@@ -187,7 +189,7 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
       style={{ position: "absolute", inset: 0, cursor: grabbing ? "grabbing" : "grab", touchAction: "none", userSelect: "none" }}
     >
       {ideas.map((idea) => {
-        const ds = bigToPx(idea.big) * scale;
+        const ds = bigToPx(idea.big) * deflateScale(idea.progress) * scale;
         return (
           <div
             key={idea.id}

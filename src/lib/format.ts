@@ -21,6 +21,16 @@ export function pxToBig(px: number): number {
   return Math.max(0, Math.min(100, Math.round((px - 70) / 2)));
 }
 
+/**
+ * Fraction of full width a balloon shows once it has deflated by `progress`
+ * (0..1). Single source of truth so the Focus screen and the wall shrink alike
+ * (progress 0 → full size, progress 1 → 20%).
+ */
+export function deflateScale(progress: number): number {
+  const p = Math.max(0, Math.min(1, Number(progress) || 0));
+  return 1 - p * 0.8;
+}
+
 /** Whole days until a deadline (>= rounds up so "today" still reads 0/1). */
 export function daysLeft(deadline: number, now: number = Date.now()): number {
   return Math.ceil((deadline - now) / DAY);

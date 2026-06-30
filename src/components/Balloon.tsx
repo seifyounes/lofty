@@ -4,6 +4,7 @@
 // inside a faded full-size "ghost" of the original.
 import type { CSSProperties } from "react";
 import { getBalloon } from "@/lib/balloons";
+import { deflateScale } from "@/lib/format";
 
 const FREDOKA = "var(--font-fredoka), sans-serif";
 const ASPECT = 1251 / 1032; // height / width of the cropped balloon art (no-cloud)
@@ -41,7 +42,7 @@ export default function Balloon({
   const b = getBalloon(balloon);
   const W = Math.max(20, Number(size) || 150);
   const defl = Math.max(0, Math.min(1, Number(deflate) || 0));
-  const w = Math.max(12, W * (1 - defl * 0.8));
+  const w = Math.max(12, W * deflateScale(defl));
   const h = w * ASPECT;
   const fullH = W * ASPECT;
   const hasPrio = priority != null && priority !== "" && showNumber;

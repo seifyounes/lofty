@@ -81,7 +81,15 @@ function Form({
   const [big, setBig] = useState(editing ? editing.big : 64);
   const [prio, setPrio] = useState(editing ? editing.priority : Math.min(3, prioMax));
   const [dl, setDl] = useState(14);
-  const [balloon, setBalloon] = useState(editing ? editing.balloon : DEFAULT_BALLOON);
+  // New ideas start on the first colour no other idea is using, so the picker
+  // opens on a free colour by default.
+  const [balloon, setBalloon] = useState(() => {
+    if (editing) return editing.balloon;
+    const used = new Set(ideas.map((i) => i.balloon));
+    const free = BALLOONS.find((b) => !used.has(b.id));
+    return (free || BALLOONS.find((b) => b.id === DEFAULT_BALLOON) || BALLOONS[0]).id;
+  });
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [focused, setFocused] = useState(false);
 
   const previewSize = bigToPx(big);
@@ -105,6 +113,18 @@ function Form({
       idx,
     }));
   }, [ideas, editing, prioMax]);
+
+  // Which balloon colour each *other* idea is using, so the picker can flag
+  // "in use" and count how many colours are still free.
+  const usage = useMemo(() => {
+    const m = new Map<string, string[]>();
+    ideas
+      .filter((i) => i.id !== editing?.id)
+      .forEach((i) => m.set(i.balloon, [...(m.get(i.balloon) || []), i.name]));
+    return m;
+  }, [ideas, editing]);
+  const freeCount = BALLOONS.filter((b) => !usage.has(b.id)).length;
+  const curUsedBy = usage.get(balloon) || [];
 
   function submit() {
     if (editing) {
@@ -157,36 +177,82 @@ function Form({
         />
 
         {/* balloon colour picker */}
-        <div style={{ ...labelCaps, marginTop: 20 }}>
-          BALLOON COLOR &mdash; <span style={{ color: "rgba(255,255,255,0.85)" }}>{getBalloon(balloon).name}</span>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
+          <div style={labelCaps}>
+            BALLOON COLOR &mdash; <span style={{ color: "rgba(255,255,255,0.85)" }}>{getBalloon(balloon).name}</span>
+            {curUsedBy.length > 0 && (
+              <span style={{ color: "#FFC24B", letterSpacing: 0, marginLeft: 6 }}>&middot; in use</span>
+            )}
+          </div>
+          <div style={{ fontFamily: NUNITO, fontWeight: 800, fontSize: 11, letterSpacing: 0.5, whiteSpace: "nowrap", color: freeCount > 0 ? "rgba(120,230,160,0.95)" : "rgba(255,165,120,0.95)" }}>
+            {freeCount} of {BALLOONS.length} colors free
+          </div>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-          {BALLOONS.map((b) => {
-            const sel = b.id === balloon;
-            return (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => setBalloon(b.id)}
-                title={b.name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 7,
-                  padding: "4px 12px 4px 5px",
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  background: sel ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.05)",
-                  border: `1px solid ${sel ? b.swatch : "rgba(255,255,255,0.12)"}`,
-                  boxShadow: sel ? `0 0 14px ${b.swatch}66` : "none",
-                }}
-              >
-                <img src={b.src} alt="" style={{ width: 22, height: "auto", display: "block" }} />
-                <span style={{ fontFamily: FREDOKA, fontWeight: 600, fontSize: 12.5, color: sel ? "#fff" : "rgba(255,255,255,0.72)" }}>{b.name}</span>
-              </button>
-            );
-          })}
-        </div>
+
+        <button
+          type="button"
+          onClick={() => setPickerOpen((o) => !o)}
+          style={{
+            display: "flex", alignItems: "center", gap: 10, width: "100%", boxSizing: "border-box",
+            marginTop: 10, padding: "9px 14px", borderRadius: 12, cursor: "pointer",
+            background: "rgba(255,255,255,0.06)",
+            border: `1px solid ${pickerOpen ? accent : "rgba(255,255,255,0.16)"}`,
+          }}
+        >
+          <img src={getBalloon(balloon).src} alt="" style={{ width: 26, height: "auto", display: "block" }} />
+          <span style={{ fontFamily: FREDOKA, fontWeight: 600, fontSize: 14, color: "#fff" }}>{getBalloon(balloon).name}</span>
+          <span style={{ marginLeft: "auto", fontFamily: NUNITO, fontWeight: 700, fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
+            {pickerOpen ? "Close ▴" : "Choose color ▾"}
+          </span>
+        </button>
+
+        {pickerOpen && (
+          <div
+            style={{
+              display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(94px, 1fr))", gap: 9,
+              marginTop: 10, padding: 12, borderRadius: 14,
+              background: "rgba(8,6,24,0.55)", border: "1px solid rgba(255,255,255,0.10)",
+              maxHeight: 290, overflowY: "auto",
+            }}
+          >
+            {BALLOONS.map((b) => {
+              const sel = b.id === balloon;
+              const usedBy = usage.get(b.id);
+              const used = !!usedBy && usedBy.length > 0;
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => { setBalloon(b.id); setPickerOpen(false); }}
+                  title={used ? `In use by ${usedBy!.join(", ")}` : `${b.name} — free`}
+                  style={{
+                    position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                    padding: "10px 6px 8px", borderRadius: 12, cursor: "pointer",
+                    background: sel ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.04)",
+                    border: `1.5px solid ${sel ? b.swatch : "rgba(255,255,255,0.10)"}`,
+                    boxShadow: sel ? `0 0 16px ${b.swatch}66` : "none",
+                  }}
+                >
+                  {used && (
+                    <span style={{
+                      position: "absolute", top: 5, right: 5, fontFamily: NUNITO, fontWeight: 800, fontSize: 8.5,
+                      letterSpacing: 0.4, color: "#1b1430", background: "#FFC24B", padding: "2px 5px", borderRadius: 999,
+                    }}>
+                      IN USE
+                    </span>
+                  )}
+                  <img src={b.src} alt="" style={{ width: 40, height: "auto", display: "block", opacity: used && !sel ? 0.5 : 1 }} />
+                  <span style={{
+                    fontFamily: FREDOKA, fontWeight: 600, fontSize: 11.5, textAlign: "center", lineHeight: 1.15,
+                    color: sel ? "#fff" : used ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.85)",
+                  }}>
+                    {b.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* big slider */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20 }}>

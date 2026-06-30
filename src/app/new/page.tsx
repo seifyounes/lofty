@@ -125,6 +125,11 @@ function Form({
   }, [ideas, editing]);
   const freeCount = BALLOONS.filter((b) => !usage.has(b.id)).length;
   const curUsedBy = usage.get(balloon) || [];
+  // Free colours first, then the ones already in use (brand order within each).
+  const orderedBalloons = useMemo(
+    () => [...BALLOONS.filter((b) => !usage.has(b.id)), ...BALLOONS.filter((b) => usage.has(b.id))],
+    [usage],
+  );
 
   function submit() {
     if (editing) {
@@ -215,7 +220,7 @@ function Form({
               maxHeight: 290, overflowY: "auto",
             }}
           >
-            {BALLOONS.map((b) => {
+            {orderedBalloons.map((b) => {
               const sel = b.id === balloon;
               const usedBy = usage.get(b.id);
               const used = !!usedBy && usedBy.length > 0;

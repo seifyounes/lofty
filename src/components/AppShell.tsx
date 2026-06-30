@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import Galaxy from "./Galaxy";
 import WallBackground from "./WallBackground";
+import NewIdeaButton from "./NewIdeaButton";
 
 const FREDOKA = "var(--font-fredoka), sans-serif";
 
@@ -71,24 +72,7 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
                 </Link>
               ))}
             </nav>
-            <Link
-              href="/new"
-              style={{
-                padding: "9px 18px",
-                borderRadius: 999,
-                background: "linear-gradient(135deg,#FF5FA2,#A06BFF)",
-                color: "#fff",
-                fontFamily: FREDOKA,
-                fontWeight: 600,
-                fontSize: 14,
-                textDecoration: "none",
-                boxShadow: onNew
-                  ? "0 0 0 2px rgba(255,255,255,0.22), 0 6px 22px rgba(160,107,255,0.55)"
-                  : "0 6px 22px rgba(160,107,255,0.55)",
-              }}
-            >
-              +&nbsp;&nbsp;New idea
-            </Link>
+            <NewIdeaButton active={onNew} />
           </div>
         </header>
 

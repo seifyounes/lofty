@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import Balloon from "@/components/Balloon";
+import NewIdeaButton from "@/components/NewIdeaButton";
 import Stage from "@/components/Stage";
 import { useIdeas } from "@/lib/useIdeas";
 import { daysLeft, formatDue, DAY } from "@/lib/format";
@@ -49,9 +49,9 @@ function Focus() {
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, minHeight: 420 }}>
         <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 24 }}>Nothing to focus on</div>
         <div style={{ fontFamily: NUNITO, fontSize: 14, color: "rgba(255,255,255,0.6)" }}>Every balloon has popped. Add a new idea to keep going.</div>
-        <Link href="/new" style={{ marginTop: 6, padding: "11px 22px", borderRadius: 999, background: "linear-gradient(135deg,#FF5FA2,#A06BFF)", color: "#fff", fontFamily: FREDOKA, fontWeight: 600, textDecoration: "none", boxShadow: "0 6px 22px rgba(160,107,255,0.55)" }}>
-          +&nbsp;&nbsp;New idea
-        </Link>
+        <div style={{ marginTop: 6 }}>
+          <NewIdeaButton large />
+        </div>
       </div>
     );
   }

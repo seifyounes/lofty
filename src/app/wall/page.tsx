@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import BalloonField from "@/components/BalloonField";
+import NewIdeaButton from "@/components/NewIdeaButton";
 import { useIdeas } from "@/lib/useIdeas";
 
 const FREDOKA = "var(--font-fredoka), sans-serif";
@@ -57,23 +57,9 @@ function EmptyState() {
       <div style={{ fontFamily: NUNITO, fontSize: 14, color: "rgba(255,255,255,0.6)" }}>
         Float your first idea onto the wall.
       </div>
-      <Link
-        href="/new"
-        style={{
-          marginTop: 6,
-          padding: "11px 22px",
-          borderRadius: 999,
-          background: "linear-gradient(135deg,#FF5FA2,#A06BFF)",
-          color: "#fff",
-          fontFamily: FREDOKA,
-          fontWeight: 600,
-          fontSize: 15,
-          textDecoration: "none",
-          boxShadow: "0 6px 22px rgba(160,107,255,0.55)",
-        }}
-      >
-        +&nbsp;&nbsp;New idea
-      </Link>
+      <div style={{ marginTop: 6 }}>
+        <NewIdeaButton large />
+      </div>
     </div>
   );
 }

@@ -1,13 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { CSSProperties } from "react";
 import AppShell from "@/components/AppShell";
 import Balloon from "@/components/Balloon";
 import NewIdeaButton from "@/components/NewIdeaButton";
 import Stage from "@/components/Stage";
 import { useIdeas } from "@/lib/useIdeas";
 import { daysLeft, formatDue, DAY } from "@/lib/format";
+import { getBalloon } from "@/lib/balloons";
 import type { Idea } from "@/lib/types";
 
 const FREDOKA = "var(--font-fredoka), sans-serif";
@@ -26,35 +29,106 @@ export default function DeadlinesPage() {
   return (
     <AppShell>
       <Suspense fallback={null}>
-        <Focus />
+        <Deadlines />
       </Suspense>
     </AppShell>
   );
 }
 
-function Focus() {
-  const { ideas, hydrated, bumpProgress, markDone } = useIdeas();
+// `/deadlines` shows the whole list (soonest first); `?focus=<id>` drills into
+// one idea's countdown.
+function Deadlines() {
+  const { ideas, hydrated } = useIdeas();
   const params = useSearchParams();
-  const router = useRouter();
-  const [popping, setPopping] = useState(false);
-
   const focusId = params.get("focus");
-  const active = ideas.filter((i) => !i.done).sort((a, b) => a.priority - b.priority);
-  const idea: Idea | undefined = (focusId && active.find((i) => i.id === focusId)) || active[0];
 
   if (!hydrated) return <div style={{ flex: 1 }} />;
 
-  if (!idea) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, minHeight: 420 }}>
-        <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 24 }}>Nothing to focus on</div>
-        <div style={{ fontFamily: NUNITO, fontSize: 14, color: "rgba(255,255,255,0.6)" }}>Every balloon has popped. Add a new idea to keep going.</div>
-        <div style={{ marginTop: 6 }}>
-          <NewIdeaButton large />
-        </div>
+  const active = ideas.filter((i) => !i.done);
+  if (active.length === 0) return <EmptyState />;
+
+  const focusIdea = focusId ? active.find((i) => i.id === focusId) : undefined;
+  if (focusIdea) return <FocusView idea={focusIdea} />;
+
+  const byDeadline = [...active].sort((a, b) => a.deadline - b.deadline);
+  return <DeadlineList ideas={byDeadline} />;
+}
+
+function EmptyState() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, minHeight: 420 }}>
+      <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 24 }}>No deadlines yet</div>
+      <div style={{ fontFamily: NUNITO, fontSize: 14, color: "rgba(255,255,255,0.6)" }}>Add an idea and it&rsquo;ll show up here, counting down.</div>
+      <div style={{ marginTop: 6 }}>
+        <NewIdeaButton large />
       </div>
-    );
-  }
+    </div>
+  );
+}
+
+// Days-left → label + colour, most urgent (overdue) reddest.
+function urgency(left: number): { label: string; color: string } {
+  if (left < 0) return { label: `Overdue ${Math.abs(left)}d`, color: "#FF5B6E" };
+  if (left === 0) return { label: "Due today", color: "#FF8A5B" };
+  if (left <= 2) return { label: `${left} day${left === 1 ? "" : "s"} left`, color: "#FF6B86" };
+  if (left <= 7) return { label: `${left} days left`, color: "#FFC24B" };
+  return { label: `${left} days left`, color: "rgba(207,210,255,0.9)" };
+}
+
+function DeadlineList({ ideas }: { ideas: Idea[] }) {
+  return (
+    <div style={{ maxWidth: 900, width: "100%", margin: "0 auto", padding: "16px 40px 40px" }}>
+      <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 20, color: "#fff" }}>Deadlines &mdash; soonest first</div>
+      <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>
+        Every idea by how soon it&rsquo;s due. Tap one to focus and count it down.
+      </div>
+
+      <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+        {ideas.map((idea) => {
+          const left = daysLeft(idea.deadline);
+          const u = urgency(left);
+          const swatch = getBalloon(idea.balloon).swatch;
+          return (
+            <Link
+              key={idea.id}
+              href={`/deadlines?focus=${idea.id}`}
+              className="lofty-card3d"
+              style={{
+                ["--accent" as string]: swatch,
+                display: "flex",
+                alignItems: "center",
+                gap: 18,
+                padding: "12px 20px 12px 24px",
+                textDecoration: "none",
+              } as CSSProperties}
+            >
+              <div style={{ width: 60, display: "flex", justifyContent: "center" }}>
+                <Balloon balloon={idea.balloon} size={46} priority={idea.priority} showNumber />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: FREDOKA, fontWeight: 600, fontSize: 18, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {idea.name}
+                </div>
+                <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 12.5, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>
+                  Priority #{idea.priority} &middot; Due {formatDue(idea.deadline)}
+                </div>
+              </div>
+              <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 15, color: u.color }}>{u.label}</div>
+                <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>Focus &rarr;</div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FocusView({ idea }: { idea: Idea }) {
+  const { bumpProgress, markDone } = useIdeas();
+  const router = useRouter();
+  const [popping, setPopping] = useState(false);
 
   const left = Math.max(0, daysLeft(idea.deadline));
 
@@ -71,11 +145,10 @@ function Focus() {
   const now = Date.now();
 
   function progress() {
-    if (!idea) return;
     bumpProgress(idea.id, 0.15);
   }
   function done() {
-    if (!idea || popping) return;
+    if (popping) return;
     setPopping(true);
     const id = idea.id;
     setTimeout(() => {
@@ -87,6 +160,30 @@ function Focus() {
 
   return (
     <div style={{ position: "relative", flex: 1, padding: "8px 24px 24px" }}>
+      <Link
+        href="/deadlines"
+        style={{
+          position: "absolute",
+          left: 24,
+          top: 6,
+          zIndex: 10,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          fontFamily: FREDOKA,
+          fontWeight: 600,
+          fontSize: 13,
+          color: "rgba(255,255,255,0.8)",
+          textDecoration: "none",
+          background: "rgba(255,255,255,0.07)",
+          border: "1px solid rgba(255,255,255,0.14)",
+          borderRadius: 999,
+          padding: "6px 14px",
+        }}
+      >
+        &larr;&nbsp;All deadlines
+      </Link>
+
       <Stage width={STAGE_W} height={STAGE_H}>
         {/* left text + controls */}
         <div className="lofty-glass" style={{ position: "absolute", left: 64, top: 150 - NAV, width: 360, padding: "22px 24px 20px" }}>

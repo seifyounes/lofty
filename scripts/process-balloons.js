@@ -31,7 +31,41 @@ const MAP = {
   "Gray": "gray",
   "silver": "silver",
   "yahaf": "yahaf",
+  // Galaxy set
+  "Andromeda Galaxy": "andromeda-galaxy",
+  "Black Eye Galaxy": "black-eye-galaxy",
+  "Bodes Galaxy": "bodes-galaxy",
+  "Cartwheel Galaxy": "cartwheel-galaxy",
+  "Cigar Galaxy": "cigar-galaxy",
+  "Hoags Object": "hoags-object",
+  "Pinwheel Galaxy": "pinwheel-galaxy",
+  "Sombrero Galaxy": "sombrero-galaxy",
+  "Sunflower Galaxy": "sunflower-galaxy",
+  "Tadpole Galaxy": "tadpole-galaxy",
+  "Triangulum Galaxy": "triangulum-galaxy",
+  "Whirlpool Galaxy": "whirlpool-galaxy",
 };
+
+// Representative glow colour for a balloon: a brightness/saturation-weighted
+// average of its visible pixels, then lifted so the glow reads vividly.
+function swatchOf(buf, w, h) {
+  let R = 0, G = 0, B = 0, wsum = 0;
+  for (let i = 0; i < w * h; i++) {
+    const a = buf[i * 4 + 3];
+    if (a < 200) continue;
+    const r = buf[i * 4], g = buf[i * 4 + 1], b = buf[i * 4 + 2];
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    const v = mx / 255, s = mx === 0 ? 0 : (mx - mn) / mx;
+    const wt = Math.pow(s, 1.4) * v + 0.015;
+    R += r * wt; G += g * wt; B += b * wt; wsum += wt;
+  }
+  if (wsum === 0) return "#ffffff";
+  let r = R / wsum, g = G / wsum, b = B / wsum;
+  // lift toward a punchy brightness so the drop-shadow glow shows
+  const mx = Math.max(r, g, b, 1), lift = Math.min(1.7, 235 / mx);
+  const hx = (x) => Math.max(0, Math.min(255, Math.round(x * lift))).toString(16).padStart(2, "0");
+  return "#" + hx(r) + hx(g) + hx(b);
+}
 
 // Decode an 8-bit PNG (RGBA ct=6 or RGB ct=2) to a straight RGBA buffer.
 function decode(file) {
@@ -130,6 +164,7 @@ minX = Math.max(0, minX - mgX); maxX = Math.min(W - 1, maxX + mgX);
 minY = Math.max(0, minY - mgY); maxY = Math.min(H - 1, maxY + mgY);
 const cw = maxX - minX + 1, ch = maxY - minY + 1;
 console.log("canonical crop", cw + "x" + ch, "aspect(h/w)", (ch / cw).toFixed(4));
+const swatches = {};
 for (const it of items) {
   const crop = Buffer.alloc(cw * ch * 4);
   for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
@@ -137,5 +172,7 @@ for (const it of items) {
     crop[di] = it.rgba[si]; crop[di + 1] = it.rgba[si + 1]; crop[di + 2] = it.rgba[si + 2]; crop[di + 3] = it.rgba[si + 3];
   }
   fs.writeFileSync(path.join(DEST, it.id + ".png"), encode(cw, ch, crop));
-  console.log("wrote", it.id + ".png");
+  swatches[it.id] = swatchOf(crop, cw, ch);
+  console.log("wrote", it.id.padEnd(18), "swatch", swatches[it.id]);
 }
+console.log("\nswatches JSON:\n" + JSON.stringify(swatches, null, 2));

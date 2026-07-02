@@ -17,6 +17,12 @@ export type Idea = {
   done: boolean;
 };
 
+/** A finished idea, kept in the archive so wins are never lost. */
+export type ArchivedIdea = Idea & {
+  /** Epoch ms the idea was marked done. */
+  finishedAt: number;
+};
+
 /** What the "New idea" form hands to addIdea. */
 export type IdeaInput = {
   name: string;

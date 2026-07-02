@@ -11,16 +11,19 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Idea, IdeaInput } from "./types";
+import { ArchivedIdea, Idea, IdeaInput } from "./types";
 import { DAY } from "./format";
 import { makeSeed } from "./seed";
 import { balloonIdFromLegacy, DEFAULT_BALLOON } from "./balloons";
 
 const KEY = "lofty.ideas";
+const ARCHIVE_KEY = "lofty.archive";
 
 type IdeasContextValue = {
   /** Always sorted by priority ascending (1 first). */
   ideas: Idea[];
+  /** Finished ideas, most recently finished first. */
+  archived: ArchivedIdea[];
   hydrated: boolean;
   addIdea: (input: IdeaInput) => Idea;
   updateIdea: (id: string, patch: Partial<Idea>) => void;
@@ -28,6 +31,10 @@ type IdeasContextValue = {
   setProgress: (id: string, progress: number) => void;
   bumpProgress: (id: string, delta: number) => void;
   markDone: (id: string) => void;
+  /** Move a finished idea back to the active wall (lowest priority). */
+  restoreIdea: (id: string) => void;
+  /** Remove a finished idea from the archive for good. */
+  deleteArchived: (id: string) => void;
   resetToDemo: () => void;
 };
 
@@ -51,6 +58,7 @@ function normalize(list: Idea[]): Idea[] {
 
 export function IdeasProvider({ children }: { children: ReactNode }) {
   const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [archived, setArchived] = useState<ArchivedIdea[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
   // Load (or seed) once on mount — keeps SSR output stable, no hydration flash.
@@ -61,6 +69,12 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
       initial = raw ? normalize(JSON.parse(raw) as Idea[]) : makeSeed();
     } catch {
       initial = makeSeed();
+    }
+    try {
+      const raw = localStorage.getItem(ARCHIVE_KEY);
+      if (raw) setArchived(JSON.parse(raw) as ArchivedIdea[]);
+    } catch {
+      /* corrupt archive — start empty, never touch active ideas */
     }
     setIdeas(renumber(initial));
     setHydrated(true);
@@ -75,6 +89,15 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
       /* ignore quota / private-mode errors */
     }
   }, [ideas, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archived));
+    } catch {
+      /* ignore quota / private-mode errors */
+    }
+  }, [archived, hydrated]);
 
   const addIdea = useCallback((input: IdeaInput): Idea => {
     const idea: Idea = {
@@ -126,9 +149,37 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const markDone = useCallback((id: string) => {
-    // "Pops the moment it's done" — remove and let the next priority take focus.
-    setIdeas((prev) => renumber(prev.filter((it) => it.id !== id)));
+  const markDone = useCallback(
+    (id: string) => {
+      // "Pops the moment it's done" — the balloon leaves the wall but the win is
+      // kept in the archive; the next priority takes focus.
+      const idea = ideas.find((it) => it.id === id);
+      if (idea) {
+        setArchived((arc) => [
+          { ...idea, progress: 1, done: true, finishedAt: Date.now() },
+          ...arc.filter((a) => a.id !== id),
+        ]);
+      }
+      setIdeas((prev) => renumber(prev.filter((it) => it.id !== id)));
+    },
+    [ideas],
+  );
+
+  const restoreIdea = useCallback(
+    (id: string) => {
+      const found = archived.find((a) => a.id === id);
+      if (!found) return;
+      const { finishedAt: _finishedAt, ...idea } = found;
+      setArchived((arc) => arc.filter((a) => a.id !== id));
+      setIdeas((prev) =>
+        renumber([...prev, { ...idea, done: false, progress: 0, priority: prev.length + 1 }]),
+      );
+    },
+    [archived],
+  );
+
+  const deleteArchived = useCallback((id: string) => {
+    setArchived((arc) => arc.filter((a) => a.id !== id));
   }, []);
 
   const resetToDemo = useCallback(() => {
@@ -138,6 +189,7 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
   const value = useMemo<IdeasContextValue>(
     () => ({
       ideas,
+      archived,
       hydrated,
       addIdea,
       updateIdea,
@@ -145,9 +197,11 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
       setProgress,
       bumpProgress,
       markDone,
+      restoreIdea,
+      deleteArchived,
       resetToDemo,
     }),
-    [ideas, hydrated, addIdea, updateIdea, deleteIdea, setProgress, bumpProgress, markDone, resetToDemo],
+    [ideas, archived, hydrated, addIdea, updateIdea, deleteIdea, setProgress, bumpProgress, markDone, restoreIdea, deleteArchived, resetToDemo],
   );
 
   return <IdeasContext.Provider value={value}>{children}</IdeasContext.Provider>;

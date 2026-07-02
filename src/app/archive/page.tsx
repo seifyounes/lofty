@@ -22,7 +22,7 @@ export default function ArchivePage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <div>
             <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 20, color: "#fff" }}>
-              Archive &mdash; finished ideas
+              Quiet Sky &mdash; finished ideas
             </div>
             <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>
               Every balloon you popped lands here. Restore one to put it back on the wall.

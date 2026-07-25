@@ -30,7 +30,7 @@ const MAP = {
   "Pearly white": "pearly-white",
   "Gray": "gray",
   "silver": "silver",
-  "yahaf": "yahaf",
+  "Baby pink": "baby-pink",
   // Galaxy set
   "Andromeda Galaxy": "andromeda-galaxy",
   "Black Eye Galaxy": "black-eye-galaxy",
@@ -44,6 +44,33 @@ const MAP = {
   "Tadpole Galaxy": "tadpole-galaxy",
   "Triangulum Galaxy": "triangulum-galaxy",
   "Whirlpool Galaxy": "whirlpool-galaxy",
+  // Planets — our own solar system
+  "Mercury": "mercury",
+  "Venus": "venus",
+  "Earth": "earth",
+  "Mars": "mars",
+  "Jupiter": "jupiter",
+  "Saturn": "saturn",
+  "Uranus": "uranus",
+  "Neptune": "neptune",
+  "Pluto": "pluto",
+  // Planets — exoplanets
+  "Proxima Centauri b": "proxima-centauri-b",
+  "TRAPPIST-1e": "trappist-1e",
+  "Kepler-22b": "kepler-22b",
+  "Kepler-452b": "kepler-452b",
+  "Kepler-16b": "kepler-16b",
+  "51 Pegasi b": "51-pegasi-b",
+  "HD 209458 b Osiris": "hd-209458-b",
+  "HD 189733 b": "hd-189733-b",
+  "WASP-12b": "wasp-12b",
+  "WASP-76b": "wasp-76b",
+  "K2-18b": "k2-18b",
+  "GJ 1214 b": "gj-1214-b",
+  "55 Cancri e": "55-cancri-e",
+  "TOI-700 d": "toi-700-d",
+  "LHS 1140 b": "lhs-1140-b",
+  "HR 8799 e": "hr-8799-e",
 };
 
 // Representative glow colour for a balloon: a brightness/saturation-weighted

@@ -47,6 +47,28 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
     </nav>
   );
 
+  // Logo with the Elite Instagram handle tucked underneath it.
+  const brand = (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
+      <Link href="/wall" style={{ display: "block", lineHeight: 0 }} aria-label="Lofty — home">
+        <img
+          src="/lofty-logo.png"
+          alt="Lofty"
+          style={{ height: isMobile ? 38 : 58, width: "auto", display: "block" }}
+        />
+      </Link>
+      <a
+        className="lofty-ig"
+        href="https://www.instagram.com/elite__app"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ fontSize: isMobile ? 11 : 12, marginLeft: isMobile ? 4 : 6 }}
+      >
+        @elite__app
+      </a>
+    </div>
+  );
+
   return (
     <div style={{ position: "relative", minHeight: "100vh", color: "#fff", background: "#07041a" }}>
       <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
@@ -67,9 +89,7 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-              <Link href="/wall" style={{ display: "block", lineHeight: 0 }} aria-label="Lofty — home">
-                <img src="/lofty-logo.png" alt="Lofty" style={{ height: 38, width: "auto", display: "block" }} />
-              </Link>
+              {brand}
               <NewIdeaButton active={onNew} />
             </div>
             {tabs}
@@ -77,17 +97,15 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
         ) : (
           <header
             style={{
-              height: 72,
-              flex: "0 0 72px",
+              height: 84,
+              flex: "0 0 84px",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               padding: "0 32px",
             }}
           >
-            <Link href="/wall" style={{ display: "block", lineHeight: 0 }} aria-label="Lofty — home">
-              <img src="/lofty-logo.png" alt="Lofty" style={{ height: 60, width: "auto", display: "block" }} />
-            </Link>
+            {brand}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {tabs}
               <NewIdeaButton active={onNew} />

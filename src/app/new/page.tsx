@@ -260,7 +260,15 @@ function Form({
                       IN USE
                     </span>
                   )}
-                  <img src={b.src} alt="" style={{ width: 40, height: "auto", display: "block", opacity: used && !sel ? 0.5 : 1 }} />
+                  {/* Lazy: the brand art is heavy, so only the swatches actually
+                      scrolled into view are fetched. */}
+                  <img
+                    src={b.src}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    style={{ width: 40, height: "auto", display: "block", opacity: used && !sel ? 0.5 : 1 }}
+                  />
                   <span style={{
                     fontFamily: FREDOKA, fontWeight: 600, fontSize: 11.5, textAlign: "center", lineHeight: 1.15,
                     color: sel ? "#fff" : used ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.85)",

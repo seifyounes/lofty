@@ -14,7 +14,7 @@ import {
 import { ArchivedIdea, Idea, IdeaInput } from "./types";
 import { DAY } from "./format";
 import { makeSeed } from "./seed";
-import { balloonIdFromLegacy, DEFAULT_BALLOON } from "./balloons";
+import { balloonIdFromLegacy, resolveBalloonId, DEFAULT_BALLOON } from "./balloons";
 
 const KEY = "lofty.ideas";
 const ARCHIVE_KEY = "lofty.archive";
@@ -47,12 +47,18 @@ function renumber(list: Idea[]): Idea[] {
     .map((idea, i) => ({ ...idea, priority: i + 1 }));
 }
 
-/** Ensure each idea has a valid `balloon` (migrate legacy `color` hex data). */
+/**
+ * Ensure each idea has a valid `balloon` — migrating legacy `color` hex data and
+ * following any balloon that has since been renamed (e.g. yahaf -> baby-pink).
+ */
 function normalize(list: Idea[]): Idea[] {
   return list.map((it) => {
-    if (it.balloon) return it;
-    const legacy = (it as unknown as { color?: string }).color;
-    return { ...it, balloon: balloonIdFromLegacy(legacy) };
+    if (!it.balloon) {
+      const legacy = (it as unknown as { color?: string }).color;
+      return { ...it, balloon: balloonIdFromLegacy(legacy) };
+    }
+    const current = resolveBalloonId(it.balloon);
+    return current === it.balloon ? it : { ...it, balloon: current };
   });
 }
 

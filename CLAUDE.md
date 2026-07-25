@@ -95,13 +95,23 @@ node scripts/process-balloons.js   # no-cloud balloons -> public/balloons/*
 node scripts/process-logo.js       # logo alone.png    -> public/lofty-logo.png
 ```
 `public/wall-bg.png` is a direct copy of `brand designs/main page background.png`.
-The set is **25 balloons**: 13 colours + 12 **galaxies** (Andromeda, Black Eye,
+The set is **50 balloons**: 13 colours + 12 **galaxies** (Andromeda, Black Eye,
 Bode's, Cartwheel, Cigar, Hoag's Object, Pinwheel, Sombrero, Sunflower, Tadpole,
-Triangulum, Whirlpool). `process-balloons.js` also **auto-derives each balloon's
-`swatch`** (glow colour) from its art and prints a `swatches JSON` block — paste
-those into `BALLOONS`. To add a balloon: drop the art in `brand designs/balloons
-with no cloud insiide/`, add it to the `MAP` in `process-balloons.js` and to
-`BALLOONS` in `src/lib/balloons.ts`, then re-run. (Old cloud versions kept at
+Triangulum, Whirlpool) + 25 **planets** (Mercury→Pluto, plus 16 exoplanets:
+Proxima b, TRAPPIST-1e, Kepler-22b/-452b/-16b, 51 Pegasi b, Osiris, HD 189733 b,
+WASP-12b/-76b, K2-18b, GJ 1214 b, 55 Cancri e, TOI-700 d, LHS 1140 b, HR 8799 e).
+`process-balloons.js` also **auto-derives each balloon's `swatch`** (glow colour)
+from its art and prints a `swatches JSON` block — paste those into `BALLOONS`. To
+add a balloon: drop the art in `brand designs/balloons with no cloud insiide/`,
+add it to the `MAP` in `process-balloons.js` and to `BALLOONS` in
+`src/lib/balloons.ts`, then re-run.
+**Renaming a balloon id** (e.g. `yahaf` → `baby-pink`): add the old id to
+`RENAMED` in `balloons.ts`. Saved ideas store the id, so without that entry every
+idea using it silently falls back to the default colour. `getBalloon` resolves it
+on read and `normalize` rewrites it on load.
+The source art is heavy (~2 MB per crop, ~100 MB total), so the colour picker
+lazy-loads its thumbnails. Serving WebP via `next/image` is the real fix if the
+weight ever bites. (Old cloud versions kept at
 `brand designs/balloons/`; a backup of the previous crops at `./balloons-backup-cloud/`.)
 
 ## Reference

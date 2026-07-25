@@ -210,6 +210,21 @@ body {
     0 3px 10px rgba(141, 69, 255, 0.5);
 }
 
+/* Elite Instagram handle under the logo. */
+.lofty-ig {
+  font-family: var(--font-nunito), sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  line-height: 1;
+  transition: color 140ms ease, text-shadow 140ms ease;
+}
+.lofty-ig:hover {
+  color: #ff8fb4;
+  text-shadow: 0 0 12px rgba(255, 143, 180, 0.55);
+}
+
 /* Raised, colour-coded card (list rows). `--accent` = the idea's balloon colour. */
 .lofty-card3d {
   --accent: #a06bff;

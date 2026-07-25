@@ -27,6 +27,17 @@ _Last updated 2026-07-02._
   deadlines focus screen a non-`<Stage>` mobile view. See `CLAUDE.md` → Mobile.
 
 ## Gotchas / learnings
+- **Don't put `will-change: transform` on a wrapper around a glowing balloon**
+  (fixed 2026-07-25). It promotes the wrapper to its own compositing layer, and
+  the balloon's `drop-shadow` glow is then clipped to that layer's box — a
+  hard-edged rectangle of light around every wall balloon. `/new` never showed it
+  because its preview balloon has no promoted ancestor; that contrast is what
+  isolated the cause. The balloon's own `filter` already gets a render surface.
+- **Screenshots need a *visible* tab**: the in-app preview pane doesn't composite
+  when hidden, and the Chrome MCP times out on a backgrounded tab. Workaround
+  that works: `browser_batch` with `navigate` immediately followed by
+  `screenshot`, since navigating focuses the tab. `requestAnimationFrame` still
+  won't run, so FPS probes are impossible while hidden.
 - **Never run `next build` while the dev server is up** (hit twice on 2026-07-25):
   the build rewrites `.next` under the running server, which then throws
   `Cannot find module './948.js'` in the browser. Stop preview → build →

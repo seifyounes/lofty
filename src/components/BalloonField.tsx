@@ -274,7 +274,11 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
               else domRefs.current.delete(idea.id);
             }}
             title={`${idea.name} — priority #${idea.priority}`}
-            style={{ position: "absolute", top: 0, left: 0, width: ds, willChange: "transform", pointerEvents: "none" }}
+            // No `will-change: transform` here: promoting this wrapper to its own
+            // compositing layer clips the balloon's glow to the layer's bounds,
+            // which shows up as a hard-edged rectangle of light around each
+            // balloon. The balloon's own filter already gets a render surface.
+            style={{ position: "absolute", top: 0, left: 0, width: ds, pointerEvents: "none" }}
           >
             <Balloon balloon={idea.balloon} size={ds} priority={idea.priority} label={idea.name} showNumber showLabel />
           </div>

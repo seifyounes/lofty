@@ -55,6 +55,11 @@ in sync — `BalloonField`'s `NARROW` uses `containerW > 720` so it agrees.
   Click without dragging opens that idea's focus screen. Curated coords live in a
   1200×680 design box scaled to fit the measured area (no `<Stage>`, so the mouse
   maps 1:1). Motion is intentional — not disabled under `prefers-reduced-motion`.
+  Each balloon's wrapper **must keep `will-change: transform` _and_ its `padFor()`
+  padding**: without the hint the wall drops to ~30fps, and without the padding
+  the promoted layer clips the balloon's glow into a visible rectangle. The
+  padding offsets the content, so `sync()`'s transform and the click hit-test both
+  account for it — keep them in step.
 - `/deadlines` is a **list of every active idea sorted by soonest deadline**
   (colour-coded `.lofty-card3d` rows with the priority balloon + urgency-coloured
   days-left). Tap a row → that idea's countdown at `?focus=<id>`, which has a

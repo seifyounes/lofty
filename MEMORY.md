@@ -27,12 +27,16 @@ _Last updated 2026-07-02._
   deadlines focus screen a non-`<Stage>` mobile view. See `CLAUDE.md` → Mobile.
 
 ## Gotchas / learnings
-- **Don't put `will-change: transform` on a wrapper around a glowing balloon**
-  (fixed 2026-07-25). It promotes the wrapper to its own compositing layer, and
-  the balloon's `drop-shadow` glow is then clipped to that layer's box — a
-  hard-edged rectangle of light around every wall balloon. `/new` never showed it
-  because its preview balloon has no promoted ancestor; that contrast is what
-  isolated the cause. The balloon's own `filter` already gets a render surface.
+- **The wall wrapper needs BOTH `will-change: transform` and padding**
+  (2026-07-25). The promoted layer clips the balloon's `drop-shadow` glow to its
+  box — a hard-edged rectangle of light around every balloon. `/new` never showed
+  it (no promoted ancestor); that contrast isolated the cause. But simply dropping
+  the hint **halved the frame rate** — measured on Seif's machine, 8 balloons:
+  30fps / 33.4ms median / 50ms p95 without it, 60fps / 16.7ms median with it.
+  The fix is `padFor()`: keep the promotion, pad the layer past the glow's reach
+  (~0.38 × balloon size). Padding shifts the content box, so the transform in
+  `sync()` **and** the click hit-test both subtract/add that pad — change one and
+  clicks land on the wrong balloon.
 - **Screenshots need a *visible* tab**: the in-app preview pane doesn't composite
   when hidden, and the Chrome MCP times out on a backgrounded tab. Workaround
   that works: `browser_batch` with `navigate` immediately followed by

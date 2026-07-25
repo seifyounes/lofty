@@ -87,6 +87,21 @@ function sizesOf(ideas: Idea[]): number[] {
   return ideas.map((i) => bigToPx(i.big) * deflateScale(i.progress));
 }
 
+/**
+ * Transparent breathing room around each balloon inside its wrapper.
+ *
+ * The wrapper keeps `will-change: transform` — without it the whole wall
+ * repaints every frame and the field goes sluggish. But that promotes the
+ * wrapper to its own compositing layer, and the balloon's `drop-shadow` glow is
+ * clipped to the layer's box, which reads as a hard-edged rectangle of light.
+ * Padding the layer past the glow's reach fixes the clipping and keeps the
+ * promotion. The widest glow is `drop-shadow(0 0 size*0.22)`, which fades out by
+ * roughly 1.5x its radius, so ~0.38 covers it.
+ */
+function padFor(displaySize: number): number {
+  return Math.max(20, displaySize * 0.38);
+}
+
 function fitScale(w: number, h: number, d: { w: number; h: number; minScale: number }) {
   return Math.max(d.minScale, Math.min(1.05, Math.min(w / d.w, h / d.h)));
 }
@@ -188,11 +203,12 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
         if (!node) continue;
         const bb = b as Body & { dsize: number; phase: number };
         const ds = bb.dsize;
+        const pad = padFor(ds);
         // visual-only bob so balloons "fly in place" without drifting
         const ox = Math.sin(tt * 0.7 + bb.phase) * bobX;
         const oy = Math.sin(tt * 0.95 + bb.phase * 1.3) * bobY;
         const tilt = Math.max(-12, Math.min(12, b.velocity.x * 1.4));
-        node.style.transform = `translate(${b.position.x + ox - ds / 2}px, ${b.position.y + oy - ds * ASPECT * ANCHOR}px) rotate(${tilt}deg)`;
+        node.style.transform = `translate(${b.position.x + ox - ds / 2 - pad}px, ${b.position.y + oy - ds * ASPECT * ANCHOR - pad}px) rotate(${tilt}deg)`;
       }
     };
     sync(performance.now() / 1000); // place balloons immediately, don't wait for the first frame
@@ -246,8 +262,9 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
       const ds = bigToPx(idea.big) * deflateScale(idea.progress) * scale;
       const mm = /translate\(([-0-9.]+)px,\s*([-0-9.]+)px\)/.exec(node.style.transform);
       if (!mm) continue;
-      const cx = parseFloat(mm[1]) + ds / 2;
-      const cy = parseFloat(mm[2]) + ds * ASPECT * ANCHOR;
+      const pad = padFor(ds);
+      const cx = parseFloat(mm[1]) + pad + ds / 2;
+      const cy = parseFloat(mm[2]) + pad + ds * ASPECT * ANCHOR;
       const dist = Math.hypot(pt.x - cx, pt.y - cy);
       if (dist <= ds * RADIUS_FACTOR + slop && (!best || dist < best.d)) best = { id: idea.id, d: dist };
     }
@@ -266,6 +283,7 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
     >
       {ideas.map((idea) => {
         const ds = bigToPx(idea.big) * deflateScale(idea.progress) * scale;
+        const pad = padFor(ds);
         return (
           <div
             key={idea.id}
@@ -274,11 +292,16 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
               else domRefs.current.delete(idea.id);
             }}
             title={`${idea.name} — priority #${idea.priority}`}
-            // No `will-change: transform` here: promoting this wrapper to its own
-            // compositing layer clips the balloon's glow to the layer's bounds,
-            // which shows up as a hard-edged rectangle of light around each
-            // balloon. The balloon's own filter already gets a render surface.
-            style={{ position: "absolute", top: 0, left: 0, width: ds, pointerEvents: "none" }}
+            // `padding` gives the promoted layer room for the glow — see padFor.
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: ds + pad * 2,
+              padding: pad,
+              willChange: "transform",
+              pointerEvents: "none",
+            }}
           >
             <Balloon balloon={idea.balloon} size={ds} priority={idea.priority} label={idea.name} showNumber showLabel />
           </div>

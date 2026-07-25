@@ -66,9 +66,11 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
     let initial: Idea[];
     try {
       const raw = localStorage.getItem(KEY);
-      initial = raw ? normalize(JSON.parse(raw) as Idea[]) : makeSeed();
+      // A brand-new visitor starts with an EMPTY sky — the demo set is only
+      // reachable on purpose via `resetToDemo`. Existing saved ideas load as-is.
+      initial = raw ? normalize(JSON.parse(raw) as Idea[]) : [];
     } catch {
-      initial = makeSeed();
+      initial = [];
     }
     try {
       const raw = localStorage.getItem(ARCHIVE_KEY);

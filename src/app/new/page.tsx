@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import AppShell from "@/components/AppShell";
 import Balloon from "@/components/Balloon";
 import { useIdeas } from "@/lib/useIdeas";
+import { useIsMobile } from "@/lib/useMediaQuery";
 import { bigToPx, bigLabel, formatDue, DAY } from "@/lib/format";
 import type { Idea, IdeaInput } from "@/lib/types";
 import { BALLOONS, DEFAULT_BALLOON, getBalloon } from "@/lib/balloons";
@@ -75,6 +76,7 @@ function Form({
   updateIdea: (id: string, patch: Partial<Idea>) => void;
   onDone: (path: string) => void;
 }) {
+  const isMobile = useIsMobile();
   const prioMax = Math.max(1, editing ? ideas.length : ideas.length + 1);
 
   const [name, setName] = useState(editing ? editing.name : "Launch referral program");
@@ -142,13 +144,25 @@ function Form({
   }
 
   return (
-    <div style={{ width: "100%", maxWidth: 1180, margin: "0 auto", padding: "12px 40px 40px", display: "flex", gap: 40, alignItems: "flex-start", flexWrap: "wrap" }}>
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 1180,
+        margin: "0 auto",
+        padding: isMobile ? "6px 14px 32px" : "12px 40px 40px",
+        display: "flex",
+        gap: isMobile ? 18 : 40,
+        alignItems: "flex-start",
+        flexWrap: "wrap",
+      }}
+    >
       {/* form card */}
       <div
         style={{
           flex: "1 1 600px",
           maxWidth: 600,
-          padding: "26px 32px 28px",
+          minWidth: 0,
+          padding: isMobile ? "18px 16px 20px" : "26px 32px 28px",
           borderRadius: 22,
           background: "rgba(16,12,40,0.66)",
           backdropFilter: "blur(12px)",
@@ -343,9 +357,9 @@ function Form({
       </div>
 
       {/* live preview */}
-      <div style={{ flex: "1 1 360px", maxWidth: 438, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8 }}>
+      <div style={{ flex: "1 1 360px", maxWidth: isMobile ? "100%" : 438, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8 }}>
         <div style={{ fontFamily: NUNITO, fontWeight: 800, fontSize: 11, letterSpacing: 2, color: "rgba(255,255,255,0.45)" }}>LIVE PREVIEW</div>
-        <div style={{ height: 372, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 6 }}>
+        <div style={{ height: isMobile ? 230 : 372, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 6 }}>
           <Balloon balloon={balloon} priority={prio} size={previewSize} />
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>

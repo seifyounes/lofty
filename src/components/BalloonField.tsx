@@ -19,6 +19,11 @@ const ASPECT = 1251 / 1032;
 const ANCHOR = 0.44; // vertical position of the balloon's visual centre within its frame
 const RADIUS_FACTOR = 0.43; // physics radius relative to display size
 
+// At or below this container width the landscape design box can't fit — switch
+// to the portrait phone layout instead of shrinking the desktop one into a
+// corner. Matches MOBILE_QUERY / the `max-width: 720px` CSS breakpoint.
+const NARROW = 720;
+
 // Curated cluster (top-left of each balloon, in the 1200×680 wall design box).
 const CURATED: [number, number][] = [
   [420, 143], [225, 58], [625, 68], [650, 273], [165, 283], [470, 398],
@@ -31,8 +36,59 @@ function curated(i: number): [number, number] {
   return [120 + (k % 6) * 185, 540 + Math.floor(k / 6) * 140];
 }
 
-function fitScale(w: number, h: number) {
-  return Math.max(0.45, Math.min(1.05, Math.min(w / DESIGN_W, h / DESIGN_H)));
+// Portrait phone layout: two columns packed from the balloons' real sizes, in a
+// box that grows with the idea count so nothing overlaps or falls off screen.
+const M_PAD = 14;
+const M_GAP_X = 10;
+const M_GAP_Y = 14;
+
+/**
+ * The design box + balloon placement for the current container size.
+ * `sizes` are the balloons' design-space widths (already deflated).
+ */
+function designFor(containerW: number, sizes: number[]) {
+  if (containerW > NARROW) {
+    return { w: DESIGN_W, h: DESIGN_H, minScale: 0.45, pos: curated };
+  }
+
+  const colW = Math.max(70, ...sizes);
+  const w = M_PAD * 2 + colW * 2 + M_GAP_X;
+
+  // Row heights come from the tallest balloon in each pair.
+  const rowCount = Math.max(1, Math.ceil(sizes.length / 2));
+  const rowH: number[] = [];
+  const rowTop: number[] = [];
+  let y = M_PAD;
+  for (let r = 0; r < rowCount; r++) {
+    const a = sizes[r * 2] ?? 0;
+    const b = sizes[r * 2 + 1] ?? 0;
+    rowH[r] = Math.max(a, b) * ASPECT;
+    rowTop[r] = y;
+    y += rowH[r] + M_GAP_Y;
+  }
+
+  return {
+    w,
+    h: y - M_GAP_Y + M_PAD,
+    minScale: 0.2,
+    // Each balloon is centred in its column and in its row, so mixed sizes stay tidy.
+    pos: (i: number): [number, number] => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const size = sizes[i] ?? 70;
+      const cx = M_PAD + colW / 2 + col * (colW + M_GAP_X);
+      return [cx - size / 2, rowTop[row] + (rowH[row] - size * ASPECT) / 2];
+    },
+  };
+}
+
+/** Design-space (pre-scale) display widths, shrunk by each idea's progress. */
+function sizesOf(ideas: Idea[]): number[] {
+  return ideas.map((i) => bigToPx(i.big) * deflateScale(i.progress));
+}
+
+function fitScale(w: number, h: number, d: { w: number; h: number; minScale: number }) {
+  return Math.max(d.minScale, Math.min(1.05, Math.min(w / d.w, h / d.h)));
 }
 
 export default function BalloonField({ ideas }: { ideas: Idea[] }) {
@@ -50,7 +106,23 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
-    return () => ro.disconnect();
+    // Backstop for phone rotation, where the observer can be throttled. Measure
+    // straight away, then again shortly after — iOS reports its final viewport
+    // size a moment after the rotation animation finishes.
+    let t = 0;
+    const settle = () => {
+      update();
+      clearTimeout(t);
+      t = window.setTimeout(update, 150);
+    };
+    window.addEventListener("resize", settle);
+    window.addEventListener("orientationchange", settle);
+    return () => {
+      ro.disconnect();
+      clearTimeout(t);
+      window.removeEventListener("resize", settle);
+      window.removeEventListener("orientationchange", settle);
+    };
   }, []);
 
   const idsKey = ideas.map((i) => i.id).join(",");
@@ -60,9 +132,10 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
     const { w, h } = size;
     if (!el || w === 0 || h === 0 || ideas.length === 0) return;
 
-    const scale = fitScale(w, h);
-    const offX = (w - DESIGN_W * scale) / 2;
-    const offY = (h - DESIGN_H * scale) / 2;
+    const d = designFor(w, sizesOf(ideas));
+    const scale = fitScale(w, h, d);
+    const offX = (w - d.w * scale) / 2;
+    const offY = (h - d.h * scale) / 2;
 
     const engine = Engine.create();
     engine.gravity.x = 0;
@@ -81,7 +154,7 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
       // Balloons shrink as their idea makes progress (same deflate as Focus), so
       // the physics body, the rendered art and the hit-test all use this size.
       const dsize = bigToPx(idea.big) * deflateScale(idea.progress) * scale;
-      const [tlx, tly] = curated(i);
+      const [tlx, tly] = d.pos(i);
       const cx = (tlx + bigToPx(idea.big) / 2) * scale + offX;
       const cy = (tly + bigToPx(idea.big) * ASPECT * ANCHOR) * scale + offY;
       const r = Math.max(14, dsize * RADIUS_FACTOR);
@@ -158,11 +231,13 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
     const d = down.current;
     down.current = null;
     if (!d) return;
-    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || Date.now() - d.t > 500) return; // was a drag
+    // Fingers wobble more than a mouse, so allow a little more slop on touch.
+    const slop = e.pointerType === "touch" ? 12 : 6;
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > slop || Date.now() - d.t > 500) return; // was a drag
     const el = containerRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const scale = fitScale(rect.width, rect.height);
+    const scale = fitScale(rect.width, rect.height, designFor(rect.width, sizesOf(ideas)));
     const pt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     let best: { id: string; d: number } | null = null;
     for (const idea of ideas) {
@@ -174,12 +249,13 @@ export default function BalloonField({ ideas }: { ideas: Idea[] }) {
       const cx = parseFloat(mm[1]) + ds / 2;
       const cy = parseFloat(mm[2]) + ds * ASPECT * ANCHOR;
       const dist = Math.hypot(pt.x - cx, pt.y - cy);
-      if (dist <= ds * RADIUS_FACTOR + 8 && (!best || dist < best.d)) best = { id: idea.id, d: dist };
+      if (dist <= ds * RADIUS_FACTOR + slop && (!best || dist < best.d)) best = { id: idea.id, d: dist };
     }
     if (best) router.push(`/deadlines?focus=${best.id}`);
   }
 
-  const scale = fitScale(size.w || DESIGN_W, size.h || DESIGN_H);
+  const w = size.w || DESIGN_W;
+  const scale = fitScale(w, size.h || DESIGN_H, designFor(w, sizesOf(ideas)));
 
   return (
     <div

@@ -5,6 +5,7 @@ import { useState } from "react";
 import AppShell from "@/components/AppShell";
 import Balloon from "@/components/Balloon";
 import { useIdeas } from "@/lib/useIdeas";
+import { useIsMobile } from "@/lib/useMediaQuery";
 import { bigToPx, daysLeft, formatDue, sizeTag } from "@/lib/format";
 import { getBalloon } from "@/lib/balloons";
 import type { Idea } from "@/lib/types";
@@ -18,6 +19,7 @@ type SortMode = "size" | "priority";
 export default function ListPage() {
   const { ideas, hydrated, deleteIdea } = useIdeas();
   const [sort, setSort] = useState<SortMode>("size");
+  const isMobile = useIsMobile();
 
   const rows = [...ideas].sort((a, b) =>
     sort === "priority" ? a.priority - b.priority : bigToPx(b.big) - bigToPx(a.big),
@@ -28,17 +30,34 @@ export default function ListPage() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1200, width: "100%", margin: "0 auto", padding: "16px 40px 40px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          width: "100%",
+          margin: "0 auto",
+          padding: isMobile ? "10px 14px 28px" : "16px 40px 40px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: isMobile ? "stretch" : "flex-start",
+            flexDirection: isMobile ? "column" : "row",
+            justifyContent: "space-between",
+            gap: isMobile ? 12 : 16,
+          }}
+        >
           <div>
-            <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 20, color: "#fff" }}>
+            <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: isMobile ? 18 : 20, color: "#fff" }}>
               All ideas &mdash; {sort === "size" ? "biggest first" : "by priority"}
             </div>
             <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>
-              Size shows how big the idea is. Priority to finish &amp; deadline sit on the right.
+              {isMobile
+                ? "Size shows how big the idea is."
+                : "Size shows how big the idea is. Priority to finish & deadline sit on the right."}
             </div>
           </div>
-          <div className="lofty-tabs">
+          <div className="lofty-tabs" style={isMobile ? { alignSelf: "flex-start" } : undefined}>
             <SortBtn active={sort === "size"} onClick={() => setSort("size")}>Biggest</SortBtn>
             <SortBtn active={sort === "priority"} onClick={() => setSort("priority")}>Priority</SortBtn>
           </div>
@@ -92,6 +111,71 @@ function Row({
   onDelete: () => void;
 }) {
   const swatch = getBalloon(idea.balloon).swatch;
+  const isMobile = useIsMobile();
+
+  // Phone: one compact row — balloon, then name with its meta stacked beneath.
+  if (isMobile) {
+    return (
+      <div
+        className="lofty-card3d"
+        style={{
+          ["--accent" as string]: swatch,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 10px 10px 16px",
+          marginBottom: 10,
+        } as CSSProperties}
+      >
+        <div style={{ width: 46, flexShrink: 0, display: "flex", justifyContent: "center" }}>
+          <Balloon balloon={idea.balloon} size={40} showNumber={false} />
+        </div>
+        <Link href={`/new?edit=${idea.id}`} style={{ flex: 1, minWidth: 0, textDecoration: "none" }}>
+          <div
+            style={{
+              fontFamily: FREDOKA,
+              fontWeight: 600,
+              fontSize: 15,
+              color: "#fff",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {idea.name}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+            <div style={{ flex: 1, maxWidth: 92, height: 5, borderRadius: 6, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${barPct}%`, borderRadius: 6, background: `linear-gradient(90deg, ${swatch}, ${swatch}aa)` }} />
+            </div>
+            <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 10.5, color: "rgba(255,255,255,0.5)" }}>{sizeTag(idea.big)}</div>
+          </div>
+          <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 11, marginTop: 5, color: urgent ? "#FF6B86" : "rgba(207,210,255,0.85)" }}>
+            <span style={{ color: swatch }}>#{idea.priority}</span> &middot; {formatDue(idea.deadline)} &middot; {Math.max(0, left)}d
+          </div>
+        </Link>
+        <button
+          onClick={onDelete}
+          title="Delete idea"
+          style={{
+            flexShrink: 0,
+            width: 32,
+            height: 32,
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(255,255,255,0.04)",
+            color: "rgba(255,255,255,0.5)",
+            cursor: "pointer",
+            fontSize: 15,
+            lineHeight: 1,
+          }}
+        >
+          &times;
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       className="lofty-card3d"

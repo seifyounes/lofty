@@ -4,12 +4,14 @@ import AppShell from "@/components/AppShell";
 import BalloonField from "@/components/BalloonField";
 import NewIdeaButton from "@/components/NewIdeaButton";
 import { useIdeas } from "@/lib/useIdeas";
+import { useIsMobile } from "@/lib/useMediaQuery";
 
 const FREDOKA = "var(--font-fredoka), sans-serif";
 const NUNITO = "var(--font-nunito), sans-serif";
 
 export default function WallPage() {
   const { ideas, hydrated } = useIdeas();
+  const isMobile = useIsMobile();
   const ordered = [...ideas].sort((a, b) => a.priority - b.priority);
 
   return (
@@ -18,18 +20,21 @@ export default function WallPage() {
         <div
           style={{
             position: "absolute",
-            top: 12,
-            left: 32,
+            top: isMobile ? 4 : 12,
+            left: isMobile ? 14 : 32,
+            right: isMobile ? 14 : undefined,
             zIndex: 3,
             pointerEvents: "none",
             fontFamily: NUNITO,
             fontWeight: 600,
-            fontSize: 13,
+            fontSize: isMobile ? 11.5 : 13,
             color: "rgba(255,255,255,0.65)",
             textShadow: "0 1px 6px rgba(0,0,0,0.5)",
           }}
         >
-          Drag a balloon to move it &middot; bump them together &middot; size = how big the idea is &middot; click to focus
+          {isMobile
+            ? "Drag to move · tap a balloon to focus"
+            : "Drag a balloon to move it · bump them together · size = how big the idea is · click to focus"}
         </div>
 
         {hydrated && ordered.length === 0 ? <EmptyState /> : hydrated ? <BalloonField ideas={ordered} /> : null}

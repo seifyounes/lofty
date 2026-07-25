@@ -4,6 +4,7 @@ import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import Balloon from "@/components/Balloon";
 import { useIdeas } from "@/lib/useIdeas";
+import { useIsMobile } from "@/lib/useMediaQuery";
 import { formatDue, sizeTag, DAY } from "@/lib/format";
 import { getBalloon } from "@/lib/balloons";
 import type { ArchivedIdea } from "@/lib/types";
@@ -15,13 +16,29 @@ const NUNITO = "var(--font-nunito), sans-serif";
 export default function ArchivePage() {
   const { archived, hydrated, restoreIdea, deleteArchived } = useIdeas();
   const rows = [...archived].sort((a, b) => b.finishedAt - a.finishedAt);
+  const isMobile = useIsMobile();
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1200, width: "100%", margin: "0 auto", padding: "16px 40px 40px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          width: "100%",
+          margin: "0 auto",
+          padding: isMobile ? "10px 14px 28px" : "16px 40px 40px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: isMobile ? "flex-start" : "center",
+            flexDirection: isMobile ? "column" : "row",
+            justifyContent: "space-between",
+            gap: isMobile ? 12 : 16,
+          }}
+        >
           <div>
-            <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 20, color: "#fff" }}>
+            <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: isMobile ? 18 : 20, color: "#fff" }}>
               Quiet Sky &mdash; finished ideas
             </div>
             <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>
@@ -82,6 +99,87 @@ function Row({
 }) {
   const swatch = getBalloon(idea.balloon).swatch;
   const tookDays = Math.max(1, Math.round((idea.finishedAt - idea.createdAt) / DAY));
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div
+        className="lofty-card3d"
+        style={{
+          ["--accent" as string]: swatch,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 10px 10px 16px",
+          marginBottom: 10,
+        } as CSSProperties}
+      >
+        <div style={{ width: 46, flexShrink: 0, display: "flex", justifyContent: "center" }}>
+          <Balloon balloon={idea.balloon} size={40} showNumber={false} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontFamily: FREDOKA,
+              fontWeight: 600,
+              fontSize: 15,
+              color: "#fff",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {idea.name}
+          </div>
+          <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 5 }}>
+            {sizeTag(idea.big)} &middot; took {tookDays}d
+          </div>
+          <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 11, color: swatch, marginTop: 4 }}>
+            ✓ Finished {formatDue(idea.finishedAt)}
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
+          <button
+            onClick={onRestore}
+            title="Restore to the wall"
+            className="lofty-press"
+            style={{
+              padding: "7px 12px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.2)",
+              background: "rgba(255,255,255,0.07)",
+              color: "rgba(255,255,255,0.85)",
+              cursor: "pointer",
+              fontFamily: NUNITO,
+              fontWeight: 700,
+              fontSize: 11.5,
+              whiteSpace: "nowrap",
+            }}
+          >
+            ↺ Restore
+          </button>
+          <button
+            onClick={onDelete}
+            title="Delete forever"
+            style={{
+              padding: "7px 12px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.04)",
+              color: "rgba(255,255,255,0.5)",
+              cursor: "pointer",
+              fontFamily: NUNITO,
+              fontWeight: 700,
+              fontSize: 11.5,
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="lofty-card3d"

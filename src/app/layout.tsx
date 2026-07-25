@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fredoka, Nunito } from "next/font/google";
 import { IdeasProvider } from "@/lib/useIdeas";
 import "./globals.css";
@@ -21,6 +21,14 @@ export const metadata: Metadata = {
   title: "Lofty — Galaxy of ideas",
   description:
     "Bottle every idea as a balloon. Size = how big it is, the number = its priority to finish. Work them one at a time.",
+};
+
+// Phones: fill the notch area and keep the dark galaxy behind the status bar.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#07041a",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

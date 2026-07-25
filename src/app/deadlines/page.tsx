@@ -9,6 +9,7 @@ import Balloon from "@/components/Balloon";
 import NewIdeaButton from "@/components/NewIdeaButton";
 import Stage from "@/components/Stage";
 import { useIdeas } from "@/lib/useIdeas";
+import { useIsMobile } from "@/lib/useMediaQuery";
 import { daysLeft, formatDue, DAY } from "@/lib/format";
 import { getBalloon } from "@/lib/balloons";
 import type { Idea } from "@/lib/types";
@@ -76,14 +77,24 @@ function urgency(left: number): { label: string; color: string } {
 }
 
 function DeadlineList({ ideas }: { ideas: Idea[] }) {
+  const isMobile = useIsMobile();
   return (
-    <div style={{ maxWidth: 900, width: "100%", margin: "0 auto", padding: "16px 40px 40px" }}>
-      <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 20, color: "#fff" }}>Deadlines &mdash; soonest first</div>
+    <div
+      style={{
+        maxWidth: 900,
+        width: "100%",
+        margin: "0 auto",
+        padding: isMobile ? "10px 14px 28px" : "16px 40px 40px",
+      }}
+    >
+      <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: isMobile ? 18 : 20, color: "#fff" }}>
+        Deadlines &mdash; soonest first
+      </div>
       <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>
         Every idea by how soon it&rsquo;s due. Tap one to focus and count it down.
       </div>
 
-      <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ marginTop: isMobile ? 14 : 18, display: "flex", flexDirection: "column", gap: isMobile ? 10 : 12 }}>
         {ideas.map((idea) => {
           const left = daysLeft(idea.deadline);
           const u = urgency(left);
@@ -97,24 +108,35 @@ function DeadlineList({ ideas }: { ideas: Idea[] }) {
                 ["--accent" as string]: swatch,
                 display: "flex",
                 alignItems: "center",
-                gap: 18,
-                padding: "12px 20px 12px 24px",
+                gap: isMobile ? 10 : 18,
+                padding: isMobile ? "10px 12px 10px 16px" : "12px 20px 12px 24px",
                 textDecoration: "none",
               } as CSSProperties}
             >
-              <div style={{ width: 60, display: "flex", justifyContent: "center" }}>
-                <Balloon balloon={idea.balloon} size={46} priority={idea.priority} showNumber />
+              <div style={{ width: isMobile ? 42 : 60, flexShrink: 0, display: "flex", justifyContent: "center" }}>
+                <Balloon balloon={idea.balloon} size={isMobile ? 38 : 46} priority={idea.priority} showNumber />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: FREDOKA, fontWeight: 600, fontSize: 18, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div
+                  style={{
+                    fontFamily: FREDOKA,
+                    fontWeight: 600,
+                    fontSize: isMobile ? 15 : 18,
+                    color: "#fff",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   {idea.name}
                 </div>
-                <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 12.5, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>
-                  Priority #{idea.priority} &middot; Due {formatDue(idea.deadline)}
+                <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: isMobile ? 11.5 : 12.5, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>
+                  {isMobile ? `#${idea.priority} · ` : `Priority #${idea.priority} · `}
+                  {formatDue(idea.deadline)}
                 </div>
               </div>
-              <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 15, color: u.color }}>{u.label}</div>
+              <div style={{ textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }}>
+                <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: isMobile ? 13 : 15, color: u.color }}>{u.label}</div>
                 <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>Focus &rarr;</div>
               </div>
             </Link>
@@ -125,24 +147,11 @@ function DeadlineList({ ideas }: { ideas: Idea[] }) {
   );
 }
 
-function FocusView({ idea }: { idea: Idea }) {
+/** Shared "made progress" / "mark done" behaviour for both focus layouts. */
+function useFocusActions(idea: Idea) {
   const { bumpProgress, markDone } = useIdeas();
   const router = useRouter();
   const [popping, setPopping] = useState(false);
-
-  const left = Math.max(0, daysLeft(idea.deadline));
-
-  // Real countdown ruler: Today (left) → the actual deadline (right). Ticks are
-  // spaced one-per-day for short horizons, thinning out for longer ones, and
-  // labelled with real dates so the roadmap matches "{left} days left".
-  const span = TL1 - TL0;
-  const totalDays = Math.max(1, left);
-  const tickStep = totalDays <= 12 ? 1 : Math.ceil(totalDays / 9);
-  const dayMarks: number[] = [];
-  for (let d = 0; d <= totalDays; d += tickStep) dayMarks.push(d);
-  if (dayMarks[dayMarks.length - 1] !== totalDays) dayMarks.push(totalDays);
-  const xOfDay = (d: number) => TL0 + span * (d / totalDays);
-  const now = Date.now();
 
   function progress() {
     bumpProgress(idea.id, 0.15);
@@ -157,6 +166,137 @@ function FocusView({ idea }: { idea: Idea }) {
       router.replace("/deadlines");
     }, 440);
   }
+  return { popping, progress, done };
+}
+
+function FocusView({ idea }: { idea: Idea }) {
+  const isMobile = useIsMobile();
+  return isMobile ? <MobileFocus idea={idea} /> : <DesktopFocus idea={idea} />;
+}
+
+// Phone focus: a plain vertical column — no fixed design coords, since scaling
+// the 1200px desktop stage down to a phone makes it unreadable.
+function MobileFocus({ idea }: { idea: Idea }) {
+  const { popping, progress, done } = useFocusActions(idea);
+  const left = Math.max(0, daysLeft(idea.deadline));
+  const u = urgency(daysLeft(idea.deadline));
+  const swatch = getBalloon(idea.balloon).swatch;
+
+  return (
+    <div style={{ padding: "8px 14px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
+      <Link
+        href="/deadlines"
+        style={{
+          alignSelf: "flex-start",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          fontFamily: FREDOKA,
+          fontWeight: 600,
+          fontSize: 13,
+          color: "rgba(255,255,255,0.8)",
+          textDecoration: "none",
+          background: "rgba(255,255,255,0.07)",
+          border: "1px solid rgba(255,255,255,0.14)",
+          borderRadius: 999,
+          padding: "7px 14px",
+        }}
+      >
+        &larr;&nbsp;All deadlines
+      </Link>
+
+      <div className={popping ? "lofty-pop" : undefined} style={{ display: "flex", justifyContent: "center" }}>
+        <Balloon balloon={idea.balloon} priority={idea.priority} size={170} deflate={idea.progress} ghost />
+      </div>
+
+      <div className="lofty-glass" style={{ padding: "18px 18px 20px" }}>
+        <div style={{ fontFamily: NUNITO, fontWeight: 800, fontSize: 11, letterSpacing: 1.6, color: "rgba(255,255,255,0.45)", textTransform: "uppercase" }}>
+          Priority #{idea.priority}
+        </div>
+        <div style={{ fontFamily: FREDOKA, fontWeight: 600, fontSize: 19, color: "#fff", marginTop: 4 }}>{idea.name}</div>
+
+        <div style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: 46, color: "#fff", lineHeight: 1, marginTop: 12 }}>
+          {left}
+          <span style={{ fontSize: 19, fontWeight: 600, marginLeft: 8 }}>days left</span>
+        </div>
+
+        {/* Countdown track: today → the real deadline. */}
+        <div style={{ marginTop: 18 }}>
+          <div style={{ height: 5, borderRadius: 5, background: "linear-gradient(90deg, rgba(70,224,255,0.55), rgba(255,59,87,0.75))" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 7 }}>
+            <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+              Today · {formatDue(Date.now())}
+            </div>
+            <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 11, color: u.color }}>
+              Deadline · {formatDue(idea.deadline)}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+          <button
+            onClick={progress}
+            className="lofty-press"
+            style={{
+              flex: 1,
+              padding: "14px 10px",
+              borderRadius: 12,
+              border: "1px solid rgba(70,224,255,0.6)",
+              background: "linear-gradient(160deg, rgba(70,224,255,0.36), rgba(70,224,255,0.12))",
+              color: "#fff",
+              fontFamily: FREDOKA,
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 16px rgba(70,224,255,0.35)",
+            }}
+          >
+            Made progress
+          </button>
+          <button
+            onClick={done}
+            className="lofty-press"
+            style={{
+              flex: 1,
+              padding: "14px 10px",
+              borderRadius: 12,
+              border: "none",
+              background: `linear-gradient(135deg,#FF5FA2,${swatch})`,
+              color: "#fff",
+              fontFamily: FREDOKA,
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+              boxShadow: "inset 0 1.5px 1px rgba(255,255,255,0.42), 0 8px 22px rgba(160,107,255,0.5)",
+            }}
+          >
+            Mark done
+          </button>
+        </div>
+        <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 10 }}>
+          Deflated {Math.round(idea.progress * 100)}%
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesktopFocus({ idea }: { idea: Idea }) {
+  const { popping, progress, done } = useFocusActions(idea);
+
+  const left = Math.max(0, daysLeft(idea.deadline));
+
+  // Real countdown ruler: Today (left) → the actual deadline (right). Ticks are
+  // spaced one-per-day for short horizons, thinning out for longer ones, and
+  // labelled with real dates so the roadmap matches "{left} days left".
+  const span = TL1 - TL0;
+  const totalDays = Math.max(1, left);
+  const tickStep = totalDays <= 12 ? 1 : Math.ceil(totalDays / 9);
+  const dayMarks: number[] = [];
+  for (let d = 0; d <= totalDays; d += tickStep) dayMarks.push(d);
+  if (dayMarks[dayMarks.length - 1] !== totalDays) dayMarks.push(totalDays);
+  const xOfDay = (d: number) => TL0 + span * (d / totalDays);
+  const now = Date.now();
 
   return (
     <div style={{ position: "relative", flex: 1, padding: "8px 24px 24px" }}>

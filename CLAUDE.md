@@ -13,7 +13,22 @@ is the real Next.js implementation.
 
 ## Stack
 Next.js (App Router) + TypeScript + Tailwind. Client-only, `localStorage`
-persistence — no backend, no accounts. Desktop-first.
+persistence — no backend, no accounts. Desktop-first, with real phone layouts.
+
+## Mobile
+Breakpoint is **720px**, in two matching halves: `useIsMobile()`
+(`src/lib/useMediaQuery.ts`) for structural/layout branches in TSX, and
+`@media (max-width: 720px)` in `globals.css` for the shared chrome. Keep the two
+in sync — `BalloonField`'s `NARROW` uses `containerW > 720` so it agrees.
+- Nav becomes two rows (logo + New idea, then the full-width tab strip).
+- `/wall` swaps its fixed 1200×680 landscape box for a **portrait two-column
+  layout packed from the balloons' real sizes** (`designFor`/`sizesOf`), so
+  nothing overlaps or leaves the screen at any idea count. Hit-testing uses a
+  larger slop for touch.
+- `/deadlines?focus=` renders `MobileFocus` — a plain vertical column, **not**
+  `<Stage>` (scaling 1200px design coords onto a phone is unreadable).
+- List/Quiet-Sky rows drop their desktop columns for a compact stacked row.
+- Hover lifts are disabled under `@media (hover: none)` so taps don't stick.
 
 ## Conventions
 - 2-space indent, double quotes, ~100-char lines (global standard).
@@ -60,6 +75,9 @@ persistence — no backend, no accounts. Desktop-first.
   states).
 - All idea mutations go through `useIdeas`; priorities are renumbered to a
   contiguous `1..N` on every change.
+- **A new visitor starts with an empty sky.** `useIdeas` seeds `[]` when
+  `localStorage` is empty; the 11-idea demo set in `src/lib/seed.ts` is only
+  reachable on purpose via `resetToDemo`. Never re-seed on first load.
 
 ## Brand assets
 Source art is in `brand designs/` (transparent RGBA). Balloons use the
@@ -82,13 +100,17 @@ with no cloud insiide/`, add it to the `MAP` in `process-balloons.js` and to
 `brand designs/balloons/`; a backup of the previous crops at `./balloons-backup-cloud/`.)
 
 ## Reference
-Design source + screenshots live in the handoff zip
-(`ideas-as-deflating-balloons/project/` and `exports/`). Match `exports/01-04.png`.
+Design source + screenshots live in the handoff zip (`Ideas as deflating
+balloons-handoff1.zip` at repo root — extract it to reach `project/` and `exports/`;
+the extracted folder is not kept in the repo). Match `exports/01-04.png`.
 
 ## Definition of done
 `npm run build`, `npm run lint`, `npm run typecheck` all clean. Each route checked
-against its export screenshot. Add → wall/list → reload persists. Focus deflate +
-done flow works.
+against its export screenshot **and at phone width (375–390px)**. Add → wall/list →
+reload persists. Focus deflate + done flow works.
+**Stop the dev server before `next build`** — building while it runs overwrites
+`.next` underneath it and the running server then dies with `Cannot find module
+'./<chunk>.js'`. Recovery: stop it, delete `.next`, restart.
 
 ## Repo & deploy
 Private GitHub repo `github.com/seifyounes/lofty` (branch `main`; git identity Seif
@@ -101,6 +123,6 @@ production URL**, never per-deploy preview URLs (each is a new origin with empty
 
 ## Out of scope (for now)
 Auth + cloud sync are **planned next** (Supabase magic-link — see `MEMORY.md`).
-Still out: mobile-optimized layouts, real notifications.
+Still out: real notifications.
 
 See `MEMORY.md` for running history, decisions, gotchas, and next steps.

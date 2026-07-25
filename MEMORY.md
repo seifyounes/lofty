@@ -19,8 +19,25 @@ _Last updated 2026-07-02._
 - **3D + colour pass**: shared `globals.css` classes (`.lofty-tabs/.lofty-card3d/
   .lofty-press/.lofty-glass`) + animated `NewIdeaButton`.
 - **Backend = Supabase, DECIDED but NOT built yet** (see next steps).
+- **Empty first run (2026-07-25)**: new visitors must land on an empty wall, so
+  the 11-idea demo seed no longer runs on first load. Seif's own saved ideas were
+  untouched — the change only affects a browser with no `lofty.ideas` key.
+- **Phone layouts (2026-07-25)**: 720px breakpoint, `useIsMobile()` + a matching
+  CSS media block. The wall got a portrait two-column packed layout and the
+  deadlines focus screen a non-`<Stage>` mobile view. See `CLAUDE.md` → Mobile.
 
 ## Gotchas / learnings
+- **Never run `next build` while the dev server is up** (hit twice on 2026-07-25):
+  the build rewrites `.next` under the running server, which then throws
+  `Cannot find module './948.js'` in the browser. Stop preview → build →
+  `rm -rf .next` → restart preview.
+- **The preview tab freezes `requestAnimationFrame`** when the Browser pane isn't
+  displayed — no frames, so rAF callbacks never run and `ResizeObserver` is
+  throttled. Consequences: screenshots time out, live resizes don't propagate
+  (reload instead), and rAF-deferred code is untestable there. Prefer
+  `setTimeout` over `requestAnimationFrame` for resize settling — it works in
+  both, and it's the better fit for iOS anyway (the viewport size finalises a
+  moment after the rotation animation).
 - **Preview tab often goes `visibilityState:"hidden"`** → `preview_screenshot`
   times out and hydration is throttled (form/list render blank). Not a bug —
   verify via `preview_eval` computed styles / DOM reads instead, or wait for the

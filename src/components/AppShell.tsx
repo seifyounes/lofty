@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import Galaxy from "./Galaxy";
 import WallBackground from "./WallBackground";
 import NewIdeaButton from "./NewIdeaButton";
+import { useIsMobile } from "@/lib/useMediaQuery";
 
 const TABS = [
   { label: "Wall", href: "/wall" },
@@ -30,6 +31,21 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
   const pathname = usePathname() || "/wall";
   const overlay = OVERLAY[pathname] ?? 0.3;
   const onNew = pathname === "/new";
+  const isMobile = useIsMobile();
+
+  const tabs = (
+    <nav className="lofty-tabs" style={isMobile ? { width: "100%", justifyContent: "space-between" } : undefined}>
+      {TABS.map((t) => (
+        <Link
+          key={t.href}
+          href={t.href}
+          className={`lofty-tab${pathname === t.href ? " lofty-tab--active" : ""}`}
+        >
+          {t.label}
+        </Link>
+      ))}
+    </nav>
+  );
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", color: "#fff", background: "#07041a" }}>
@@ -39,36 +55,47 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
       </div>
 
       <div style={{ position: "relative", zIndex: 1, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <header
-          style={{
-            height: 72,
-            flex: "0 0 72px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 32px",
-          }}
-        >
-          <Link href="/wall" style={{ display: "block", lineHeight: 0 }} aria-label="Lofty — home">
-            <img src="/lofty-logo.png" alt="Lofty" style={{ height: 60, width: "auto", display: "block" }} />
-          </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <nav className="lofty-tabs">
-              {TABS.map((t) => (
-                <Link
-                  key={t.href}
-                  href={t.href}
-                  className={`lofty-tab${pathname === t.href ? " lofty-tab--active" : ""}`}
-                >
-                  {t.label}
-                </Link>
-              ))}
-            </nav>
-            <NewIdeaButton active={onNew} />
-          </div>
-        </header>
+        {/* Phone: logo + New on one row, the tabs on their own full-width row. */}
+        {isMobile ? (
+          <header
+            style={{
+              flex: "0 0 auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              padding: "8px 14px 10px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+              <Link href="/wall" style={{ display: "block", lineHeight: 0 }} aria-label="Lofty — home">
+                <img src="/lofty-logo.png" alt="Lofty" style={{ height: 38, width: "auto", display: "block" }} />
+              </Link>
+              <NewIdeaButton active={onNew} />
+            </div>
+            {tabs}
+          </header>
+        ) : (
+          <header
+            style={{
+              height: 72,
+              flex: "0 0 72px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 32px",
+            }}
+          >
+            <Link href="/wall" style={{ display: "block", lineHeight: 0 }} aria-label="Lofty — home">
+              <img src="/lofty-logo.png" alt="Lofty" style={{ height: 60, width: "auto", display: "block" }} />
+            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {tabs}
+              <NewIdeaButton active={onNew} />
+            </div>
+          </header>
+        )}
 
-        <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>{children}</main>
+        <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>{children}</main>
       </div>
     </div>
   );

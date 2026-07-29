@@ -2,7 +2,9 @@
 #   powershell -ExecutionPolicy Bypass -File tools\wallpaper-sync\status.ps1
 
 $config = Join-Path $env:USERPROFILE ".lofty-sync\config.json"
-if (-not (Test-Path $config)) { Write-Output "not installed (no $config) — run install.ps1"; exit 1 }
+# ASCII only in this file: PowerShell 5.1 reads BOM-less UTF-8 as ANSI, and a
+# multi-byte character inside a string can corrupt the parse of the whole block.
+if (-not (Test-Path $config)) { Write-Output "not installed (no $config) - run install.ps1"; exit 1 }
 $cfg = Get-Content $config -Raw | ConvertFrom-Json
 
 $task = Get-ScheduledTask -TaskName "LoftyWallpaperSync" -ErrorAction SilentlyContinue
@@ -13,7 +15,7 @@ Write-Output "port     : $(if ($listen) { '47821 listening' } else { 'not listen
 
 try {
   $r = Invoke-RestMethod -Uri "http://127.0.0.1:47821/v1/ping?t=$($cfg.token)" -TimeoutSec 4
-  Write-Output "service  : ok — update $($r.generation), $($r.ideas) ideas, wallpaper attached: $($r.wallpaperClients -gt 0)"
+  Write-Output "service  : ok - update $($r.generation), $($r.ideas) ideas, wallpaper attached: $($r.wallpaperClients -gt 0)"
   if ($r.lastError) { Write-Output "lastError: $($r.lastError)" }
 } catch {
   Write-Output "service  : unreachable ($($_.Exception.Message))"

@@ -72,6 +72,29 @@ _Last updated 2026-07-02._
 - Balloon swatches are **auto-derived** by `process-balloons.js` (prints `swatches
   JSON`); keep the hand-tuned originals for the 13 colours, use derived for galaxies.
 
+- **Desktop wallpaper live-sync shipped** (2026-07-29). `tools/wallpaper-sync/`
+  service (port 47821, loopback-only, token in `%USERPROFILE%\.lofty-sync\config.json`,
+  autostarts via Task Scheduler task `LoftyWallpaperSync`) + a gated push effect in
+  `useIdeas` + `/settings` opt-in page. The wallpaper doc stays a **local file** in
+  the Lively package; HTTP is data-only (SSE + state.js poll fallback), so the
+  desktop never blanks when the service is down and Lively is never restarted.
+  Four traps encoded in the code — do not undo them: (1) `/v1/events` must return
+  **200 + text/event-stream even for a bad token** (an error status makes
+  EventSource give up forever = silently frozen wallpaper); (2) Node's default
+  `requestTimeout` (300s) kills SSE — zeroed explicitly; (3) the `balloon` id from
+  the wire becomes a file path — hard-allowlisted against `balloons.ts`; (4) config
+  must NOT live under `%LOCALAPPDATA%`: Windows virtualizes AppData for packaged
+  apps, so two processes read two different config files with two different tokens
+  ("bad token" that no amount of copying fixes). Verified on this machine: HTTPS
+  `lofty-two.vercel.app` → `http://127.0.0.1` works in Chrome 122 (PNA warning-only;
+  headers already sent for future enforcement).
+- **Lively's WebView2 viewport is 1536×864 @ dpr 1.25**, not 1920×1080 — anything
+  fixed-pixel gets cropped. The shell scales a 1920×1080 design box to fit
+  (`fit()`), same idea as BalloonField's `fitScale`.
+- **Seif's real wall lives on `lofty-two.vercel.app`** — NOT `lofty-seifo11`
+  (SSO-gated, empty) and NOT localhost (stale copy: 9 old ideas). localStorage is
+  per-origin; always confirm the origin before reading "his" ideas.
+
 ## Open questions / next steps
 - **Supabase cross-device sync (biggest next task).** Chosen: a **new, free
   ($0/mo) project named `lofty`** in org **`elite`** (org id

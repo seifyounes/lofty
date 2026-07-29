@@ -107,6 +107,37 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
     }
   }, [archived, hydrated]);
 
+  // Mirror the wall to the desktop-wallpaper service, when this browser has
+  // opted in. Deliberately a separate effect from the two above so a sync
+  // problem can never interfere with persistence, and a single combined one so
+  // markDone/restoreIdea — which write both slices in one batch — push once.
+  //
+  // The opt-in is checked BEFORE the dynamic import, so for anyone who has not
+  // enabled it the chunk is never even fetched.
+  useEffect(() => {
+    if (!hydrated) return;
+    let live = true;
+    const t = window.setTimeout(() => {
+      if (!live) return;
+      let on = false;
+      try {
+        on = localStorage.getItem("lofty.sync.enabled") === "1";
+      } catch {
+        /* private mode — stay off */
+      }
+      if (!on) return;
+      import("./wallSync")
+        .then((m) => m.push(ideas, archived))
+        .catch(() => {
+          /* the wallpaper is optional; never surface this in the app */
+        });
+    }, 400);
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+  }, [ideas, archived, hydrated]);
+
   const addIdea = useCallback((input: IdeaInput): Idea => {
     const idea: Idea = {
       id:

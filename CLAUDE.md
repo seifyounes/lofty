@@ -127,6 +127,21 @@ reload persists. Focus deflate + done flow works.
 `.next` underneath it and the running server then dies with `Cannot find module
 './<chunk>.js'`. Recovery: stop it, delete `.next`, restart.
 
+## Desktop wallpaper sync
+`tools/wallpaper-sync/` mirrors the wall onto the Windows desktop (Lively
+Wallpaper). One effect in `useIdeas` pushes state to a local service
+(`127.0.0.1:47821`) — gated on `localStorage["lofty.sync.enabled"]` **before**
+the dynamic import, so other visitors never load the chunk. Opt-in per
+browser+origin at `/settings` (token from `%USERPROFILE%\.lofty-sync\config.json`;
+installer `install.ps1`, health `status.ps1`). The wallpaper document is a local
+file in the Lively package; the service only feeds it data (SSE + `state.js`),
+so it renders even with the service down and Lively never restarts. Invariants:
+`/v1/events` always answers 200 + `text/event-stream` (even bad token); Node
+server timeouts zeroed for SSE; wire `balloon` ids allowlisted against
+`balloons.ts` before touching the filesystem; service config lives outside
+AppData (packaged-app virtualization splits it otherwise). Rebuild the page
+shell only after code changes: `node tools/wallpaper-sync/build-shell.mjs`.
+
 ## Repo & deploy
 Private GitHub repo `github.com/seifyounes/lofty` (branch `main`; git identity Seif
 Younes). Commit early; **push only when Seif approves** — he tries changes locally

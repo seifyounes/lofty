@@ -101,6 +101,44 @@ let lastSent = "";
 let failures = 0;
 let mutedUntil = 0;
 let pending: string | null = null;
+let pendingBody: string | null = null;
+let pendingSig = "";
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+const RETRY_MS = 20_000;
+
+/**
+ * Keep trying the last unsent payload until it lands. Without this, an idea
+ * added while the service happens to be down would sit unsynced until the next
+ * edit or page load — so "it always syncs" would quietly not be true.
+ */
+function scheduleRetry(): void {
+  if (retryTimer || !pendingBody) return;
+  retryTimer = setTimeout(async () => {
+    retryTimer = null;
+    if (!isEnabled() || !pendingBody) return;
+    const body = pendingBody;
+    for (const port of candidatePorts()) {
+      try {
+        const res = await post(port, body);
+        if (!res.ok) break; // reachable but refusing — retrying won't help
+        const out = (await res.json()) as { generation?: number };
+        write(PORT_KEY, String(port));
+        lastSent = pendingSig;
+        pending = null;
+        pendingBody = null;
+        failures = 0;
+        mutedUntil = 0;
+        publish({ ok: true, at: Date.now(), generation: out.generation });
+        return;
+      } catch {
+        /* try the next port */
+      }
+    }
+    publish({ ok: false, at: Date.now(), error: "service not running (still retrying)" });
+    scheduleRetry();
+  }, RETRY_MS);
+}
 
 function candidatePorts(): number[] {
   const cached = Number(read(PORT_KEY));
@@ -141,8 +179,6 @@ export async function push(ideas: Idea[], archived: ArchivedIdea[]): Promise<voi
   if (sig === lastSent) return; // nothing changed — the StrictMode echo dies here
   pending = core;
 
-  if (Date.now() < mutedUntil) return;
-
   const body = JSON.stringify({
     v: 1,
     token,
@@ -151,6 +187,16 @@ export async function push(ideas: Idea[], archived: ArchivedIdea[]): Promise<voi
     ideas: toRows(ideas),
     archivedIds: archived.slice(0, 50).map((a) => a.id),
   });
+
+  // Remember it before attempting, so a failure (or a muted window) still gets
+  // retried in the background rather than being lost.
+  pendingBody = body;
+  pendingSig = sig;
+
+  if (Date.now() < mutedUntil) {
+    scheduleRetry();
+    return;
+  }
 
   for (const port of candidatePorts()) {
     try {
@@ -172,6 +218,7 @@ export async function push(ideas: Idea[], archived: ArchivedIdea[]): Promise<voi
       write(PORT_KEY, String(port));
       lastSent = sig;
       pending = null;
+      pendingBody = null;
       failures = 0;
       mutedUntil = 0;
       publish({
@@ -187,12 +234,9 @@ export async function push(ideas: Idea[], archived: ArchivedIdea[]): Promise<voi
   }
 
   failures++;
-  if (failures >= 5) mutedUntil = Date.now() + 30_000; // stop hammering loopback
-  publish({
-    ok: false,
-    at: Date.now(),
-    error: failures >= 5 ? "service not running (retrying every 30s)" : "service not running",
-  });
+  if (failures >= 5) mutedUntil = Date.now() + RETRY_MS; // stop hammering loopback
+  publish({ ok: false, at: Date.now(), error: "service not running (retrying)" });
+  scheduleRetry(); // the idea still reaches the wallpaper once the service is back
 }
 
 /** One-shot reachability probe. Call this from a click — if the browser shows a

@@ -322,3 +322,9 @@ body {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+
+/* Hints in empty fields: clearly a prompt, never mistaken for a real value. */
+input::placeholder {
+  color: rgba(255, 255, 255, 0.32);
+  font-weight: 500;
+}

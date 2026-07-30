@@ -10,10 +10,14 @@ import { useIdeas } from "@/lib/useIdeas";
 import { useIsMobile } from "@/lib/useMediaQuery";
 import { bigToPx, bigLabel, formatDue, DAY } from "@/lib/format";
 import type { Idea, IdeaInput } from "@/lib/types";
-import { BALLOONS, DEFAULT_BALLOON, getBalloon } from "@/lib/balloons";
+import { BALLOONS, getBalloon } from "@/lib/balloons";
 
 const FREDOKA = "var(--font-fredoka), sans-serif";
 const NUNITO = "var(--font-nunito), sans-serif";
+/** Stands in for a balloon swatch until the user has picked one. */
+const NEUTRAL_ACCENT = "#A06BFF";
+/** height / width of the cropped balloon art — the empty preview matches it. */
+const BALLOON_ASPECT = 1251 / 1032;
 
 const PRESETS = [
   { lbl: "3 days", v: 3 },
@@ -79,26 +83,25 @@ function Form({
   const isMobile = useIsMobile();
   const prioMax = Math.max(1, editing ? ideas.length : ideas.length + 1);
 
-  const [name, setName] = useState(editing ? editing.name : "Launch referral program");
+  // A new idea starts completely blank: no example name, no colour picked for
+  // you. Both are the user's first two decisions, so the form must not look
+  // like it already made them.
+  const [name, setName] = useState(editing ? editing.name : "");
   const [big, setBig] = useState(editing ? editing.big : 64);
   const [prio, setPrio] = useState(editing ? editing.priority : Math.min(3, prioMax));
   const [dl, setDl] = useState(14);
-  // New ideas start on the first colour no other idea is using, so the picker
-  // opens on a free colour by default.
-  const [balloon, setBalloon] = useState(() => {
-    if (editing) return editing.balloon;
-    const used = new Set(ideas.map((i) => i.balloon));
-    const free = BALLOONS.find((b) => !used.has(b.id));
-    return (free || BALLOONS.find((b) => b.id === DEFAULT_BALLOON) || BALLOONS[0]).id;
-  });
+  const [balloon, setBalloon] = useState<string | null>(editing ? editing.balloon : null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [nudge, setNudge] = useState(false);
 
+  const chosen = balloon ? getBalloon(balloon) : null;
   const previewSize = bigToPx(big);
   const bigPct = big;
   const prioPct = prioMax > 1 ? ((prio - 1) / (prioMax - 1)) * 100 : 0;
-  const accent = getBalloon(balloon).swatch;
+  const accent = chosen ? chosen.swatch : NEUTRAL_ACCENT;
   const cta = `linear-gradient(135deg,#FF5FA2,${accent})`;
+  const ready = name.trim().length > 0 && !!balloon;
 
   const dueDate = Date.now() + dl * DAY;
   const dueStr = formatDue(dueDate);
@@ -126,7 +129,7 @@ function Form({
     return m;
   }, [ideas, editing]);
   const freeCount = BALLOONS.filter((b) => !usage.has(b.id)).length;
-  const curUsedBy = usage.get(balloon) || [];
+  const curUsedBy = (balloon && usage.get(balloon)) || [];
   // Free colours first, then the ones already in use (brand order within each).
   const orderedBalloons = useMemo(
     () => [...BALLOONS.filter((b) => !usage.has(b.id)), ...BALLOONS.filter((b) => usage.has(b.id))],
@@ -134,14 +137,24 @@ function Form({
   );
 
   function submit() {
+    // Nothing is filled in for the user, so nothing can be saved half-blank
+    // either: point at what is missing instead of creating a nameless idea.
+    if (!ready || !balloon) {
+      setNudge(true);
+      if (!balloon) setPickerOpen(true);
+      return;
+    }
+    const trimmed = name.trim();
     if (editing) {
-      updateIdea(editing.id, { name, big, priority: prio, balloon, deadline: dueDate });
+      updateIdea(editing.id, { name: trimmed, big, priority: prio, balloon, deadline: dueDate });
       onDone("/list");
     } else {
-      addIdea({ name, big, priority: prio, balloon, deadlineDays: dl });
+      addIdea({ name: trimmed, big, priority: prio, balloon, deadlineDays: dl });
       onDone("/wall");
     }
   }
+
+  const missing = !name.trim() ? "Name your idea first" : !balloon ? "Pick a balloon color first" : "";
 
   return (
     <div
@@ -179,6 +192,7 @@ function Form({
           onChange={(e) => setName(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          placeholder="What's the idea?"
           style={{
             width: "100%",
             boxSizing: "border-box",
@@ -198,7 +212,8 @@ function Form({
         {/* balloon colour picker */}
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
           <div style={labelCaps}>
-            BALLOON COLOR &mdash; <span style={{ color: "rgba(255,255,255,0.85)" }}>{getBalloon(balloon).name}</span>
+            BALLOON COLOR
+            {chosen && <> &mdash; <span style={{ color: "rgba(255,255,255,0.85)" }}>{chosen.name}</span></>}
             {curUsedBy.length > 0 && (
               <span style={{ color: "#FFC24B", letterSpacing: 0, marginLeft: 6 }}>&middot; in use</span>
             )}
@@ -215,11 +230,29 @@ function Form({
             display: "flex", alignItems: "center", gap: 10, width: "100%", boxSizing: "border-box",
             marginTop: 10, padding: "9px 14px", borderRadius: 12, cursor: "pointer",
             background: "rgba(255,255,255,0.06)",
-            border: `1px solid ${pickerOpen ? accent : "rgba(255,255,255,0.16)"}`,
+            border: `1px solid ${
+              pickerOpen ? accent : nudge && !chosen ? "rgba(255,140,140,0.7)" : "rgba(255,255,255,0.16)"
+            }`,
           }}
         >
-          <img src={getBalloon(balloon).src} alt="" style={{ width: 26, height: "auto", display: "block" }} />
-          <span style={{ fontFamily: FREDOKA, fontWeight: 600, fontSize: 14, color: "#fff" }}>{getBalloon(balloon).name}</span>
+          {chosen ? (
+            <img src={chosen.src} alt="" style={{ width: 26, height: "auto", display: "block" }} />
+          ) : (
+            <span
+              style={{
+                width: 22, height: 22, borderRadius: "50%",
+                border: "1.5px dashed rgba(255,255,255,0.35)", display: "block", flex: "0 0 auto",
+              }}
+            />
+          )}
+          <span
+            style={{
+              fontFamily: FREDOKA, fontWeight: 600, fontSize: 14,
+              color: chosen ? "#fff" : "rgba(255,255,255,0.5)",
+            }}
+          >
+            {chosen ? chosen.name : "No color yet"}
+          </span>
           <span style={{ marginLeft: "auto", fontFamily: NUNITO, fontWeight: 700, fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
             {pickerOpen ? "Close ▴" : "Choose color ▾"}
           </span>
@@ -358,17 +391,52 @@ function Form({
 
         <div
           onClick={submit}
-          style={{ marginTop: 22, textAlign: "center", padding: 14, borderRadius: 14, background: cta, color: "#fff", fontFamily: FREDOKA, fontWeight: 600, fontSize: 16, cursor: "pointer", boxShadow: "0 10px 26px rgba(160,107,255,0.45)" }}
+          style={{
+            marginTop: 22, textAlign: "center", padding: 14, borderRadius: 14, background: cta,
+            color: "#fff", fontFamily: FREDOKA, fontWeight: 600, fontSize: 16, cursor: "pointer",
+            boxShadow: ready ? "0 10px 26px rgba(160,107,255,0.45)" : "none",
+            opacity: ready ? 1 : 0.5,
+            transition: "opacity 160ms ease",
+          }}
         >
           &#10022;&nbsp;&nbsp;{editing ? "Save changes" : "Float it onto the wall"}
         </div>
+        {nudge && missing && (
+          <div style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 12, color: "#FFA0A0", textAlign: "center", marginTop: 9 }}>
+            {missing}
+          </div>
+        )}
       </div>
 
       {/* live preview */}
       <div style={{ flex: "1 1 360px", maxWidth: isMobile ? "100%" : 438, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8 }}>
         <div style={{ fontFamily: NUNITO, fontWeight: 800, fontSize: 11, letterSpacing: 2, color: "rgba(255,255,255,0.45)" }}>LIVE PREVIEW</div>
         <div style={{ height: isMobile ? 230 : 372, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 6 }}>
-          <Balloon balloon={balloon} priority={prio} size={previewSize} />
+          {chosen ? (
+            <Balloon balloon={chosen.id} priority={prio} size={previewSize} />
+          ) : (
+            // No colour picked yet — preview the *size* without implying a choice.
+            <div
+              style={{
+                width: previewSize,
+                height: previewSize * BALLOON_ASPECT,
+                borderRadius: "50% 50% 46% 46% / 44% 44% 56% 56%",
+                border: "2px dashed rgba(255,255,255,0.22)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <span style={{ fontFamily: FREDOKA, fontWeight: 700, fontSize: previewSize * 0.3, color: "rgba(255,255,255,0.28)", lineHeight: 1 }}>
+                {prio}
+              </span>
+              <span style={{ fontFamily: NUNITO, fontWeight: 700, fontSize: 11, letterSpacing: 0.6, color: "rgba(255,255,255,0.35)" }}>
+                PICK A COLOR
+              </span>
+            </div>
+          )}
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
           {[bigLabel(big), `Priority #${prio}`, `Due ${dueStr}`].map((chip) => (

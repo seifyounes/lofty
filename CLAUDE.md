@@ -37,7 +37,15 @@ in sync — `BalloonField`'s `NARROW` uses `containerW > 720` so it agrees.
   name overlaid, a layered `drop-shadow` glow (dark contact shadow + colour glow
   + soft halo), and deflate via scaling. Each idea stores a `balloon` id; the
   New-idea form's **Choose color** grid lists free colours first (used ones badged
-  "IN USE") and auto-selects a free colour so ideas don't clash by default.
+  "IN USE").
+- **The New-idea form opens blank.** No example name, no pre-selected colour —
+  the name field is empty with a placeholder hint, and the picker reads "No color
+  yet" until the user chooses. A pre-filled value reads as a decision the app
+  already made for you. Consequences to keep in step: `balloon` state is
+  `string | null` (only `null` before a pick, never on edit), the live preview
+  falls back to a dashed size-only outline, `accent` falls back to
+  `NEUTRAL_ACCENT`, and submit is blocked until name **and** colour are set —
+  it names what's missing instead of saving a half-blank idea.
 - The **Galaxy** animated background is ported 1:1 from the design's JS; it's
   used on `/list`, `/deadlines`, `/new`. `/wall` uses `WallBackground` — the
   brand nebula image with a slow Ken Burns zoom/pan, drifting glow, a twinkling

@@ -13,7 +13,14 @@ _Last updated 2026-07-02._
 ## Decisions
 - **Stack**: Next.js App Router + TS + Tailwind, client-only, `localStorage`, desktop-first.
 - **Balloons shrink with progress** on the wall too (not just Focus) — via `deflateScale`.
-- **New-idea colour picker**: grid, free colours first, "IN USE" badges, auto-picks a free colour.
+- **New-idea colour picker**: grid, free colours first, "IN USE" badges.
+- **Blank new-idea form (2026-07-30)**: the name field used to be pre-filled with
+  the literal string `"Launch referral program"` and the picker auto-selected the
+  first free colour. Seif read both as the app having already decided for him, so
+  both defaults are gone. The cost of removing them is that a new idea can now be
+  incomplete, so `submit()` gained a guard (name + colour required, picker opens
+  and a red hint names the gap). `useIdeas.addIdea` still falls back to
+  `DEFAULT_BALLOON` for an empty id, so the store can't be corrupted either way.
 - **Deadlines** reworked (2026-07-02): default view is the full list sorted by
   soonest deadline; tapping opens `?focus=<id>`. Sort is by deadline, *not* priority.
 - **3D + colour pass**: shared `globals.css` classes (`.lofty-tabs/.lofty-card3d/

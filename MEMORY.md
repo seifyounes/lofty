@@ -91,6 +91,15 @@ _Last updated 2026-07-02._
 - **Lively's WebView2 viewport is 1536×864 @ dpr 1.25**, not 1920×1080 — anything
   fixed-pixel gets cropped. The shell scales a 1920×1080 design box to fit
   (`fit()`), same idea as BalloonField's `fitScale`.
+- **Vercel deploys but does NOT register GitHub deployments** (2026-07-30). The
+  `gh api .../deployments` list is stale (nothing since 2026-07-25) even though
+  pushes go live. Don't use it to check whether a deploy landed — poll the site
+  itself (e.g. `curl https://lofty-two.vercel.app/settings`). Deploys take ~1-2 min.
+- **Sync opt-in is per browser profile AND per origin.** Enabled on
+  `lofty-two.vercel.app` in Seif's Chrome on 2026-07-30. Clearing site data turns
+  it off silently — the only place that surfaces it is `/settings`. Watch for a
+  future Chrome that enforces Local Network Access: the loopback fetch would then
+  need a one-time Allow prompt (which is why the probe fires from a click).
 - **Seif's real wall lives on `lofty-two.vercel.app`** — NOT `lofty-seifo11`
   (SSO-gated, empty) and NOT localhost (stale copy: 9 old ideas). localStorage is
   per-origin; always confirm the origin before reading "his" ideas.

@@ -110,6 +110,17 @@ _Last updated 2026-07-02._
   Fix: stop all `Lively*` processes and relaunch `C:\Program Files\Lively
   Wallpaper\Lively.exe` — it restores from `WallpaperLayout.json`. The sync log
   proves the handoff: `sse disconnect (clients=0)` then `sse connect (clients=1)`.
+- **"Fix Lofty Wallpaper" desktop icon (2026-07-31)**: Seif asked for a one-click
+  way to re-link the wallpaper when it breaks. `repair.ps1` starts the sync
+  service if it is down, restarts Lively if the wallpaper is orphaned or missing,
+  then reports via a MessageBox; `install-shortcut.ps1` creates the desktop `.lnk`
+  (target `wscript.exe repair-hidden.vbs`, so no console ever flashes) and
+  generates `%USERPROFILE%\.lofty-sync\lofty.ico`. Verified: no-op on a healthy
+  system (same player PID, exit 0), and a real repair after killing the player.
+  Gotcha while testing — filtering `Win32_Process` for `CommandLine -like
+  "*repair.ps1*"` **matches the PowerShell tool process running the filter**,
+  because the pattern is in its own command line; it looks like a runaway
+  process with a new PID every check. Exclude `$PID`.
 - **Lively's WebView2 viewport is 1536×864 @ dpr 1.25**, not 1920×1080 — anything
   fixed-pixel gets cropped. The shell scales a 1920×1080 design box to fit
   (`fit()`), same idea as BalloonField's `fitScale`.

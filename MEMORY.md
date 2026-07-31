@@ -95,6 +95,21 @@ _Last updated 2026-07-02._
   ("bad token" that no amount of copying fixes). Verified on this machine: HTTPS
   `lofty-two.vercel.app` → `http://127.0.0.1` works in Chrome 122 (PNA warning-only;
   headers already sent for future enforcement).
+- **An Explorer restart orphans the wallpaper, and every health check still says
+  "ok"** (hit 2026-07-31). Explorer restarting destroys and recreates the desktop
+  window (`Progman`/`WorkerW`) that Lively parents its player into. The player
+  *process* survives, keeps its SSE connection, and keeps applying updates — to a
+  window attached to nothing. So `status.ps1` reports "wallpaper attached: True",
+  the log keeps accepting generations, and the desktop shows the plain Windows
+  wallpaper. Symptom: "the wallpaper is not running" with a totally healthy
+  service. Diagnose by comparing process start times (`explorer` newer than
+  `Lively.Player.WebView2` = orphaned), and confirm by enumerating `Progman`'s
+  child windows for the player's PID — a healthy wallpaper is a visible
+  1536×864 `Chrome_WidgetWin_0` child. `Lively.exe setwp --file ...` does NOT fix
+  it (this install has no `Livelycu.exe` CLI; the command is silently ignored).
+  Fix: stop all `Lively*` processes and relaunch `C:\Program Files\Lively
+  Wallpaper\Lively.exe` — it restores from `WallpaperLayout.json`. The sync log
+  proves the handoff: `sse disconnect (clients=0)` then `sse connect (clients=1)`.
 - **Lively's WebView2 viewport is 1536×864 @ dpr 1.25**, not 1920×1080 — anything
   fixed-pixel gets cropped. The shell scales a 1920×1080 design box to fit
   (`fit()`), same idea as BalloonField's `fitScale`.

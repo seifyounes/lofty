@@ -149,6 +149,12 @@ server timeouts zeroed for SSE; wire `balloon` ids allowlisted against
 `balloons.ts` before touching the filesystem; service config lives outside
 AppData (packaged-app virtualization splits it otherwise). Rebuild the page
 shell only after code changes: `node tools/wallpaper-sync/build-shell.mjs`.
+A healthy service does **not** mean a visible wallpaper: if Explorer restarts,
+Lively's player keeps running and keeps consuming updates while parented to
+nothing. `status.ps1` therefore checks the desktop layer itself (`Progman` /
+`WorkerW` children) and prints `desktop: painting` or `ORPHANED` — never trust
+`wallpaper attached` alone. Fix is a full Lively restart; `setwp` does not
+re-parent it.
 
 ## Repo & deploy
 Private GitHub repo `github.com/seifyounes/lofty` (branch `main`; git identity Seif

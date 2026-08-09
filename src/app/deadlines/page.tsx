@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { CSSProperties } from "react";
 import AppShell from "@/components/AppShell";
 import Balloon from "@/components/Balloon";
+import IdeaBreakdown from "@/components/IdeaBreakdown";
 import NewIdeaButton from "@/components/NewIdeaButton";
 import Stage from "@/components/Stage";
 import { useIdeas } from "@/lib/useIdeas";
@@ -181,6 +182,8 @@ function MobileFocus({ idea }: { idea: Idea }) {
   const left = Math.max(0, daysLeft(idea.deadline));
   const u = urgency(daysLeft(idea.deadline));
   const swatch = getBalloon(idea.balloon).swatch;
+  const stepsTotal = idea.steps?.length ?? 0;
+  const stepsDone = idea.steps?.filter((s) => s.done).length ?? 0;
 
   return (
     <div style={{ padding: "8px 14px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -234,25 +237,27 @@ function MobileFocus({ idea }: { idea: Idea }) {
         </div>
 
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <button
-            onClick={progress}
-            className="lofty-press"
-            style={{
-              flex: 1,
-              padding: "14px 10px",
-              borderRadius: 12,
-              border: "1px solid rgba(70,224,255,0.6)",
-              background: "linear-gradient(160deg, rgba(70,224,255,0.36), rgba(70,224,255,0.12))",
-              color: "#fff",
-              fontFamily: FREDOKA,
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: "pointer",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 16px rgba(70,224,255,0.35)",
-            }}
-          >
-            Made progress
-          </button>
+          {stepsTotal === 0 && (
+            <button
+              onClick={progress}
+              className="lofty-press"
+              style={{
+                flex: 1,
+                padding: "14px 10px",
+                borderRadius: 12,
+                border: "1px solid rgba(70,224,255,0.6)",
+                background: "linear-gradient(160deg, rgba(70,224,255,0.36), rgba(70,224,255,0.12))",
+                color: "#fff",
+                fontFamily: FREDOKA,
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: "pointer",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 16px rgba(70,224,255,0.35)",
+              }}
+            >
+              Made progress
+            </button>
+          )}
           <button
             onClick={done}
             className="lofty-press"
@@ -274,8 +279,13 @@ function MobileFocus({ idea }: { idea: Idea }) {
           </button>
         </div>
         <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 10 }}>
+          {stepsTotal > 0 && `${stepsDone} of ${stepsTotal} steps · `}
           Deflated {Math.round(idea.progress * 100)}%
         </div>
+      </div>
+
+      <div className="lofty-glass" style={{ padding: "16px 16px 18px" }}>
+        <IdeaBreakdown idea={idea} mobile />
       </div>
     </div>
   );
@@ -285,6 +295,8 @@ function DesktopFocus({ idea }: { idea: Idea }) {
   const { popping, progress, done } = useFocusActions(idea);
 
   const left = Math.max(0, daysLeft(idea.deadline));
+  const stepsTotal = idea.steps?.length ?? 0;
+  const stepsDone = idea.steps?.filter((s) => s.done).length ?? 0;
 
   // Real countdown ruler: Today (left) → the actual deadline (right). Ticks are
   // spaced one-per-day for short horizons, thinning out for longer ones, and
@@ -335,28 +347,32 @@ function DesktopFocus({ idea }: { idea: Idea }) {
             <span style={{ fontSize: 24, fontWeight: 600, marginLeft: 8 }}>days left</span>
           </div>
           <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 14, color: "rgba(255,255,255,0.62)", marginTop: 16, lineHeight: 1.55 }}>
-            Started big. The balloon deflates a little every day you make progress &mdash; and pops the moment it&rsquo;s done.
+            {stepsTotal > 0
+              ? "Each step you check lets a little air out — it pops the moment it's done."
+              : "Started big. The balloon deflates a little every day you make progress — and pops the moment it's done."}
           </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
-            <button
-              onClick={progress}
-              className="lofty-press"
-              style={{
-                padding: "11px 18px",
-                borderRadius: 12,
-                border: "1px solid rgba(70,224,255,0.6)",
-                background: "linear-gradient(160deg, rgba(70,224,255,0.36), rgba(70,224,255,0.12))",
-                color: "#fff",
-                fontFamily: FREDOKA,
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: "pointer",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 16px rgba(70,224,255,0.35)",
-              }}
-            >
-              Made progress
-            </button>
+            {stepsTotal === 0 && (
+              <button
+                onClick={progress}
+                className="lofty-press"
+                style={{
+                  padding: "11px 18px",
+                  borderRadius: 12,
+                  border: "1px solid rgba(70,224,255,0.6)",
+                  background: "linear-gradient(160deg, rgba(70,224,255,0.36), rgba(70,224,255,0.12))",
+                  color: "#fff",
+                  fontFamily: FREDOKA,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 16px rgba(70,224,255,0.35)",
+                }}
+              >
+                Made progress
+              </button>
+            )}
             <button
               onClick={done}
               className="lofty-press"
@@ -377,6 +393,7 @@ function DesktopFocus({ idea }: { idea: Idea }) {
             </button>
           </div>
           <div style={{ fontFamily: NUNITO, fontWeight: 600, fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 10 }}>
+            {stepsTotal > 0 && `${stepsDone} of ${stepsTotal} steps · `}
             Deflated {Math.round(idea.progress * 100)}%
           </div>
         </div>
@@ -384,6 +401,25 @@ function DesktopFocus({ idea }: { idea: Idea }) {
         {/* center balloon */}
         <div className={popping ? "lofty-pop" : undefined} style={{ position: "absolute", left: 470, top: 150 - NAV, zIndex: 5 }}>
           <Balloon balloon={idea.balloon} priority={idea.priority} size={280} deflate={idea.progress} ghost />
+        </div>
+
+        {/* break-it-down panel — the otherwise-unused right region */}
+        <div
+          className="lofty-glass"
+          style={{
+            position: "absolute",
+            left: 770,
+            top: 100 - NAV,
+            width: 370,
+            height: 360,
+            padding: "16px 18px 18px",
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+            zIndex: 5,
+          }}
+        >
+          <IdeaBreakdown idea={idea} />
         </div>
 
         {/* countdown timeline: Today (left) → actual deadline (right) */}

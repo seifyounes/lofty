@@ -137,6 +137,16 @@ _Last updated 2026-07-02._
   (SSO-gated, empty) and NOT localhost (stale copy: 9 old ideas). localStorage is
   per-origin; always confirm the origin before reading "his" ideas.
 
+- **Idea breakdown shipped (2026-08-09)**: focus screen gained `IdeaBreakdown` —
+  guided prompts (outcome / first action / blocker — field is `outcome`, NOT
+  `done`, because `Idea.done` already means finished) + free notes + a steps
+  checklist. Checking steps drives `progress` (write-time sync in `withSteps`),
+  so the balloon deflates on focus, wall, and wallpaper with zero changes to
+  those consumers. "Made progress" renders only when the checklist is empty.
+  Decisions: guided template chosen by Seif over plain notes+checklist; steps
+  drive progress. Verified end-to-end on localhost including delete-all-freeze,
+  re-inflate on new step, and restore-unchecks-steps.
+
 ## Open questions / next steps
 - **Supabase cross-device sync (biggest next task).** Chosen: a **new, free
   ($0/mo) project named `lofty`** in org **`elite`** (org id

@@ -11,7 +11,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ArchivedIdea, Idea, IdeaInput } from "./types";
+import {
+  ArchivedIdea,
+  Idea,
+  IdeaInput,
+  IdeaPlan,
+  Step,
+  PLAN_FIELD_MAX,
+  STEP_TEXT_MAX,
+} from "./types";
 import { DAY } from "./format";
 import { makeSeed } from "./seed";
 import { balloonIdFromLegacy, resolveBalloonId, DEFAULT_BALLOON } from "./balloons";
@@ -36,6 +44,11 @@ type IdeasContextValue = {
   /** Remove a finished idea from the archive for good. */
   deleteArchived: (id: string) => void;
   resetToDemo: () => void;
+  /** Merge guided-breakdown / notes fields (created lazily on first edit). */
+  updatePlan: (id: string, patch: Partial<IdeaPlan>) => void;
+  addStep: (id: string, text: string) => void;
+  toggleStep: (id: string, stepId: string) => void;
+  deleteStep: (id: string, stepId: string) => void;
 };
 
 const IdeasContext = createContext<IdeasContextValue | null>(null);
@@ -47,12 +60,76 @@ function renumber(list: Idea[]): Idea[] {
     .map((idea, i) => ({ ...idea, priority: i + 1 }));
 }
 
+function newId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `id-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+}
+
+/**
+ * Apply a steps array and, when non-empty, derive progress from it — THE single
+ * place the steps→progress invariant lives. An empty array freezes progress at
+ * its last value, and the manual "Made progress" button takes over again.
+ */
+function withSteps(it: Idea, steps: Step[]): Idea {
+  const next = { ...it, steps };
+  if (steps.length > 0) next.progress = steps.filter((s) => s.done).length / steps.length;
+  return next;
+}
+
+/**
+ * Guard the optional breakdown fields against corrupt/hand-edited storage —
+ * they get `.map`-ed and rendered, so a wrong shape must never reach React.
+ * Progress is deliberately NOT recomputed here; the invariant re-establishes on
+ * the next step mutation.
+ */
+function normalizeExtras(it: Idea): Idea {
+  let out = it;
+  if (it.steps !== undefined) {
+    if (!Array.isArray(it.steps)) {
+      const { steps: _steps, ...rest } = it;
+      out = rest;
+    } else {
+      const clean = it.steps
+        .filter((s): s is Step => !!s && typeof s === "object" && typeof s.text === "string")
+        .map((s) => ({
+          id: typeof s.id === "string" ? s.id : newId(),
+          text: s.text.slice(0, STEP_TEXT_MAX),
+          done: s.done === true,
+        }));
+      out = { ...out, steps: clean };
+    }
+  }
+  if (out.plan !== undefined) {
+    const p = out.plan as unknown;
+    if (!p || typeof p !== "object") {
+      const { plan: _plan, ...rest } = out;
+      out = rest;
+    } else {
+      const str = (v: unknown) => (typeof v === "string" ? v.slice(0, PLAN_FIELD_MAX) : "");
+      const raw = p as Record<string, unknown>;
+      out = {
+        ...out,
+        plan: {
+          outcome: str(raw.outcome),
+          first: str(raw.first),
+          blocker: str(raw.blocker),
+          notes: str(raw.notes),
+        },
+      };
+    }
+  }
+  return out;
+}
+
 /**
  * Ensure each idea has a valid `balloon` — migrating legacy `color` hex data and
- * following any balloon that has since been renamed (e.g. yahaf -> baby-pink).
+ * following any balloon that has since been renamed (e.g. yahaf -> baby-pink) —
+ * and a well-formed breakdown (plan/steps).
  */
 function normalize(list: Idea[]): Idea[] {
-  return list.map((it) => {
+  return list.map((raw) => {
+    const it = normalizeExtras(raw);
     if (!it.balloon) {
       const legacy = (it as unknown as { color?: string }).color;
       return { ...it, balloon: balloonIdFromLegacy(legacy) };
@@ -140,10 +217,7 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
 
   const addIdea = useCallback((input: IdeaInput): Idea => {
     const idea: Idea = {
-      id:
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `id-${Date.now()}-${Math.round(Math.random() * 1e6)}`,
+      id: newId(),
       name: input.name.trim() || "Untitled idea",
       big: Math.max(0, Math.min(100, input.big)),
       priority: input.priority,
@@ -210,8 +284,19 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
       if (!found) return;
       const { finishedAt: _finishedAt, ...idea } = found;
       setArchived((arc) => arc.filter((a) => a.id !== id));
+      // Back on the wall = fresh start: progress resets, so step flags must
+      // reset with it or the checklist would disagree with the balloon.
       setIdeas((prev) =>
-        renumber([...prev, { ...idea, done: false, progress: 0, priority: prev.length + 1 }]),
+        renumber([
+          ...prev,
+          {
+            ...idea,
+            done: false,
+            progress: 0,
+            steps: idea.steps?.map((s) => ({ ...s, done: false })),
+            priority: prev.length + 1,
+          },
+        ]),
       );
     },
     [archived],
@@ -219,6 +304,57 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
 
   const deleteArchived = useCallback((id: string) => {
     setArchived((arc) => arc.filter((a) => a.id !== id));
+  }, []);
+
+  // Breakdown mutations. None of them touch priority, so no renumber — the same
+  // pattern as bumpProgress. Progress stays consistent because every write to
+  // `steps` goes through withSteps.
+  const updatePlan = useCallback((id: string, patch: Partial<IdeaPlan>) => {
+    setIdeas((prev) =>
+      prev.map((it) => {
+        if (it.id !== id) return it;
+        const base: IdeaPlan = it.plan ?? { outcome: "", first: "", blocker: "", notes: "" };
+        const next = { ...base };
+        (Object.keys(patch) as (keyof IdeaPlan)[]).forEach((k) => {
+          const v = patch[k];
+          if (typeof v === "string") next[k] = v.slice(0, PLAN_FIELD_MAX);
+        });
+        return { ...it, plan: next };
+      }),
+    );
+  }, []);
+
+  const addStep = useCallback((id: string, text: string) => {
+    const t = text.trim().slice(0, STEP_TEXT_MAX);
+    if (!t) return;
+    setIdeas((prev) =>
+      prev.map((it) =>
+        it.id === id
+          ? withSteps(it, [...(it.steps ?? []), { id: newId(), text: t, done: false }])
+          : it,
+      ),
+    );
+  }, []);
+
+  const toggleStep = useCallback((id: string, stepId: string) => {
+    setIdeas((prev) =>
+      prev.map((it) =>
+        it.id === id
+          ? withSteps(
+              it,
+              (it.steps ?? []).map((s) => (s.id === stepId ? { ...s, done: !s.done } : s)),
+            )
+          : it,
+      ),
+    );
+  }, []);
+
+  const deleteStep = useCallback((id: string, stepId: string) => {
+    setIdeas((prev) =>
+      prev.map((it) =>
+        it.id === id ? withSteps(it, (it.steps ?? []).filter((s) => s.id !== stepId)) : it,
+      ),
+    );
   }, []);
 
   const resetToDemo = useCallback(() => {
@@ -239,8 +375,12 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
       restoreIdea,
       deleteArchived,
       resetToDemo,
+      updatePlan,
+      addStep,
+      toggleStep,
+      deleteStep,
     }),
-    [ideas, archived, hydrated, addIdea, updateIdea, deleteIdea, setProgress, bumpProgress, markDone, restoreIdea, deleteArchived, resetToDemo],
+    [ideas, archived, hydrated, addIdea, updateIdea, deleteIdea, setProgress, bumpProgress, markDone, restoreIdea, deleteArchived, resetToDemo, updatePlan, addStep, toggleStep, deleteStep],
   );
 
   return <IdeasContext.Provider value={value}>{children}</IdeasContext.Provider>;

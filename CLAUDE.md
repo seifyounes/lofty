@@ -80,6 +80,14 @@ in sync — `BalloonField`'s `NARROW` uses `containerW > 720` so it agrees.
 - Balloons **shrink with progress**: `format.deflateScale(progress)` is the single
   source of truth (0 → full, 1 → 20%); Focus and the wall both use it, so an idea
   deflates identically on both.
+- The focus screen carries the **breakdown panel** (`IdeaBreakdown`, "Plan" tab =
+  guided prompts + notes, "Steps" tab = checklist). **When `steps` is non-empty,
+  `progress` is derived as doneCount/total** — the invariant lives only in
+  `withSteps()` in `useIdeas`; every steps write goes through it. Empty checklist
+  freezes progress and brings the manual "Made progress" button back. `restoreIdea`
+  unchecks all steps to match its `progress: 0`. `plan`/`steps` are optional on
+  `Idea` (absent until first edit — blank-form policy), guarded in `normalize`,
+  and never reach the wallpaper wire (positional tuple).
 - Shared 3D/colour chrome in `globals.css`: `.lofty-tabs`/`.lofty-tab`(+`--active`)
   for segmented toggles (nav + list sort); `.lofty-card3d` (raised card — set
   `--accent` to the idea's balloon swatch for a colour stripe + hover glow);

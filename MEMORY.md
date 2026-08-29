@@ -121,6 +121,15 @@ _Last updated 2026-07-02._
   "*repair.ps1*"` **matches the PowerShell tool process running the filter**,
   because the pattern is in its own command line; it looks like a runaway
   process with a new PID every check. Exclude `$PID`.
+- **`cursor: none` in the wallpaper CSS hides the mouse pointer on the whole
+  desktop** (2026-08-09). The shell had `cursor: none` on `html, body` — harmless
+  in a normal page, but this page *is* the desktop surface, so the pointer
+  vanished everywhere outside an app window and the desktop became
+  un-navigable. Any CSS in `build-shell.mjs` that would be merely cosmetic in a
+  browser tab is a system-wide UI change here. Fixed to `cursor: default`.
+  Note a rebuilt shell does **not** reach the screen on its own — the running
+  WebView2 keeps the old page; run `repair.ps1` (or restart Lively) after
+  `build-shell.mjs`.
 - **Lively's WebView2 viewport is 1536×864 @ dpr 1.25**, not 1920×1080 — anything
   fixed-pixel gets cropped. The shell scales a 1920×1080 design box to fit
   (`fit()`), same idea as BalloonField's `fitScale`.

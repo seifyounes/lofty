@@ -156,7 +156,11 @@ so it renders even with the service down and Lively never restarts. Invariants:
 server timeouts zeroed for SSE; wire `balloon` ids allowlisted against
 `balloons.ts` before touching the filesystem; service config lives outside
 AppData (packaged-app virtualization splits it otherwise). Rebuild the page
-shell only after code changes: `node tools/wallpaper-sync/build-shell.mjs`.
+shell only after code changes: `node tools/wallpaper-sync/build-shell.mjs` —
+then `repair.ps1`, since the running WebView2 keeps serving the old page.
+**The shell's CSS is desktop-wide UI, not page styling**: `cursor: none` there
+hid the mouse pointer across the entire desktop. Never hide the cursor, and
+weigh any body-level rule as a change to Windows itself.
 A healthy service does **not** mean a visible wallpaper: if Explorer restarts,
 Lively's player keeps running and keeps consuming updates while parented to
 nothing. The desktop-layer probe (`Progman`/`WorkerW` children) lives once in

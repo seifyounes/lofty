@@ -270,7 +270,10 @@ const html = `<!doctype html>
   html, body {
     width: 100%; height: 100%;
     overflow: hidden; background: #07041a;
-    cursor: none;
+    /* This page IS the desktop surface, so its cursor rule is the cursor rule
+       for the whole desktop. "none" hid the pointer everywhere outside a
+       window — never hide it here. */
+    cursor: default;
   }
   .stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
 

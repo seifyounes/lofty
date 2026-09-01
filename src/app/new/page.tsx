@@ -9,8 +9,8 @@ import Balloon from "@/components/Balloon";
 import { useIdeas } from "@/lib/useIdeas";
 import { useIsMobile } from "@/lib/useMediaQuery";
 import { bigToPx, bigLabel, formatDue, DAY } from "@/lib/format";
-import type { Idea, IdeaInput } from "@/lib/types";
-import { BALLOONS, getBalloon } from "@/lib/balloons";
+import type { ArchivedIdea, Idea, IdeaInput } from "@/lib/types";
+import { BALLOONS, getBalloon, resolveBalloonId } from "@/lib/balloons";
 
 const FREDOKA = "var(--font-fredoka), sans-serif";
 const NUNITO = "var(--font-nunito), sans-serif";
@@ -45,7 +45,7 @@ export default function NewIdeaPage() {
 }
 
 function NewIdea() {
-  const { ideas, hydrated, addIdea, updateIdea } = useIdeas();
+  const { ideas, archived, hydrated, addIdea, updateIdea } = useIdeas();
   const params = useSearchParams();
   const router = useRouter();
   const editId = params.get("edit");
@@ -59,6 +59,7 @@ function NewIdea() {
     <Form
       key={editId ?? "new"}
       ideas={ideas}
+      archived={archived}
       editing={editing}
       addIdea={addIdea}
       updateIdea={updateIdea}
@@ -69,12 +70,14 @@ function NewIdea() {
 
 function Form({
   ideas,
+  archived,
   editing,
   addIdea,
   updateIdea,
   onDone,
 }: {
   ideas: Idea[];
+  archived: ArchivedIdea[];
   editing: Idea | undefined;
   addIdea: (input: IdeaInput) => unknown;
   updateIdea: (id: string, patch: Partial<Idea>) => void;
@@ -128,6 +131,18 @@ function Form({
       .forEach((i) => m.set(i.balloon, [...(m.get(i.balloon) || []), i.name]));
     return m;
   }, [ideas, editing]);
+  // How many ideas have ever worn each colour — the wall plus everything
+  // finished. "IN USE" answers "is it taken right now"; this answers "have I
+  // leaned on this one before". Archived ideas skip `normalize` on load, so
+  // resolve renamed ids here or their uses would land on the wrong balloon.
+  const useCount = useMemo(() => {
+    const m = new Map<string, number>();
+    [...ideas, ...archived].forEach((i) => {
+      const id = resolveBalloonId(i.balloon);
+      m.set(id, (m.get(id) ?? 0) + 1);
+    });
+    return m;
+  }, [ideas, archived]);
   const freeCount = BALLOONS.filter((b) => !usage.has(b.id)).length;
   const curUsedBy = (balloon && usage.get(balloon)) || [];
   // Free colours first, then the ones already in use (brand order within each).
@@ -271,12 +286,17 @@ function Form({
               const sel = b.id === balloon;
               const usedBy = usage.get(b.id);
               const used = !!usedBy && usedBy.length > 0;
+              const times = useCount.get(b.id) ?? 0;
               return (
                 <button
                   key={b.id}
                   type="button"
                   onClick={() => { setBalloon(b.id); setPickerOpen(false); }}
-                  title={used ? `In use by ${usedBy!.join(", ")}` : `${b.name} — free`}
+                  title={[
+                    b.name,
+                    times === 0 ? "never used" : `used ${times} time${times === 1 ? "" : "s"}`,
+                    used ? `in use by ${usedBy!.join(", ")}` : "free right now",
+                  ].join(" — ")}
                   style={{
                     position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                     padding: "10px 6px 8px", borderRadius: 12, cursor: "pointer",
@@ -285,6 +305,17 @@ function Form({
                     boxShadow: sel ? `0 0 16px ${b.swatch}66` : "none",
                   }}
                 >
+                  {/* Lifetime count. No badge at all means never used, which
+                      keeps 50 tiles quiet while still answering the question. */}
+                  {times > 0 && (
+                    <span style={{
+                      position: "absolute", top: 5, left: 5, fontFamily: NUNITO, fontWeight: 800, fontSize: 9,
+                      lineHeight: 1, color: "rgba(255,255,255,0.92)", background: "rgba(8,6,24,0.72)",
+                      border: "1px solid rgba(255,255,255,0.18)", padding: "3px 5px", borderRadius: 999,
+                    }}>
+                      {times}&times;
+                    </span>
+                  )}
                   {used && (
                     <span style={{
                       position: "absolute", top: 5, right: 5, fontFamily: NUNITO, fontWeight: 800, fontSize: 8.5,

@@ -156,6 +156,16 @@ _Last updated 2026-07-02._
   drive progress. Verified end-to-end on localhost including delete-all-freeze,
   re-inflate on new step, and restore-unchecks-steps.
 
+- **Balloon use counts in the picker (2026-08-09)**: Seif kept re-picking the
+  same colours and wanted to know, at choose-time, how often he'd used each one.
+  The `/new` picker tiles now carry an `N×` badge counting active + archived
+  ideas; never-used colours show no badge (a "0" on 45 of 50 tiles is noise).
+  Two things this surfaced: the archive is **never run through `normalize`** on
+  load, so counting must call `resolveBalloonId` itself or legacy ids like
+  `yahaf` land nowhere; and "IN USE" (taken right now) and the count (lifetime)
+  are genuinely different questions — an archive-only colour reads
+  "used 1 time — free right now". Scope was explicitly picker-only.
+
 ## Open questions / next steps
 - **Supabase cross-device sync (biggest next task).** Chosen: a **new, free
   ($0/mo) project named `lofty`** in org **`elite`** (org id

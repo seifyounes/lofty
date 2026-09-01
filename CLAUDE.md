@@ -37,7 +37,10 @@ in sync — `BalloonField`'s `NARROW` uses `containerW > 720` so it agrees.
   name overlaid, a layered `drop-shadow` glow (dark contact shadow + colour glow
   + soft halo), and deflate via scaling. Each idea stores a `balloon` id; the
   New-idea form's **Choose color** grid lists free colours first (used ones badged
-  "IN USE").
+  "IN USE") and badges each tile with a **lifetime use count** (`N×`, active +
+  archived, renamed ids resolved because the archive skips `normalize`); no badge
+  means never used. That count is picker-only — deliberately not on the wall,
+  list or focus screen.
 - **The New-idea form opens blank.** No example name, no pre-selected colour —
   the name field is empty with a placeholder hint, and the picker reads "No color
   yet" until the user chooses. A pre-filled value reads as a decision the app

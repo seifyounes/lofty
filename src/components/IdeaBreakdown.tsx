@@ -22,7 +22,9 @@ const eyebrow: CSSProperties = {
   textTransform: "uppercase",
 };
 
-const PROMPTS: { key: keyof IdeaPlan; label: string; placeholder: string; rows: number }[] = [
+/** The guided prompts, in display order. Exported so Quiet Sky can show a
+    finished idea's answers under the same labels. */
+export const PROMPTS: { key: keyof IdeaPlan; label: string; placeholder: string; rows: number }[] = [
   { key: "outcome", label: "Done looks like", placeholder: "What does done look like?", rows: 2 },
   { key: "first", label: "First physical action", placeholder: "First physical action?", rows: 2 },
   { key: "blocker", label: "What's blocking it", placeholder: "What's blocking it?", rows: 2 },

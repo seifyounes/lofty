@@ -166,6 +166,15 @@ _Last updated 2026-07-02._
   are genuinely different questions — an archive-only colour reads
   "used 1 time — free right now". Scope was explicitly picker-only.
 
+- **Quiet Sky shows a finished idea's notes (2026-08-09)**: Seif wanted to click
+  a finished balloon and just *see* its notes. Rows with any breakdown content
+  become clickable on the balloon+name (not the buttons) and expand a read-only
+  `FinishedNotes` block: non-empty plan fields under the same labels as the
+  focus screen (`PROMPTS` is now exported for that), plus steps with ✓/○.
+  Deliberately read-only — the archive is a record; editing means restoring.
+  Rows with nothing to show are not clickable and carry no hint, so a blank
+  archive looks exactly as before. Whitespace-only fields count as empty.
+
 ## Open questions / next steps
 - **Supabase cross-device sync (biggest next task).** Chosen: a **new, free
   ($0/mo) project named `lofty`** in org **`elite`** (org id

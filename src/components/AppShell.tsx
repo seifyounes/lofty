@@ -10,6 +10,7 @@ import Galaxy from "./Galaxy";
 import WallBackground from "./WallBackground";
 import NewIdeaButton from "./NewIdeaButton";
 import { useIsMobile } from "@/lib/useMediaQuery";
+import { useIdeas } from "@/lib/useIdeas";
 
 const TABS = [
   { label: "Wall", href: "/wall" },
@@ -32,6 +33,7 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
   const overlay = OVERLAY[pathname] ?? 0.3;
   const onNew = pathname === "/new";
   const isMobile = useIsMobile();
+  const { demo, exitDemo } = useIdeas();
 
   const tabs = (
     <nav className="lofty-tabs" style={isMobile ? { width: "100%", justifyContent: "space-between" } : undefined}>
@@ -111,6 +113,15 @@ export default function AppShell({ children, bgImage }: { children: ReactNode; b
               <NewIdeaButton active={onNew} />
             </div>
           </header>
+        )}
+
+        {demo && (
+          <div className="lofty-demo-bar" role="status">
+            <span>Demo wall with sample ideas. Nothing you change here is saved.</span>
+            <button type="button" onClick={exitDemo}>
+              Start your own wall
+            </button>
+          </div>
         )}
 
         <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>{children}</main>

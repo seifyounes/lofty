@@ -26,6 +26,24 @@ import { balloonIdFromLegacy, resolveBalloonId, DEFAULT_BALLOON } from "./balloo
 
 const KEY = "lofty.ideas";
 const ARCHIVE_KEY = "lofty.archive";
+/** Session flag for the demo link, so the demo survives navigation and reloads in that tab only. */
+const DEMO_KEY = "lofty.demo";
+
+/**
+ * Demo mode: opened on purpose via `/demo` or `?demo`. It shows the sample ideas from memory and never
+ * reads or writes the visitor's saved wall, so a first visit elsewhere still starts with an empty sky.
+ */
+function readDemoMode(): boolean {
+  const asked =
+    window.location.pathname.startsWith("/demo") ||
+    new URLSearchParams(window.location.search).has("demo");
+  try {
+    if (asked) sessionStorage.setItem(DEMO_KEY, "1");
+    return asked || sessionStorage.getItem(DEMO_KEY) === "1";
+  } catch {
+    return asked;
+  }
+}
 
 type IdeasContextValue = {
   /** Always sorted by priority ascending (1 first). */
@@ -33,6 +51,10 @@ type IdeasContextValue = {
   /** Finished ideas, most recently finished first. */
   archived: ArchivedIdea[];
   hydrated: boolean;
+  /** True while the demo link's sample wall is showing; nothing is saved. */
+  demo: boolean;
+  /** Leave the demo and open the visitor's own wall. */
+  exitDemo: () => void;
   addIdea: (input: IdeaInput) => Idea;
   updateIdea: (id: string, patch: Partial<Idea>) => void;
   deleteIdea: (id: string) => void;
@@ -143,9 +165,16 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [archived, setArchived] = useState<ArchivedIdea[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [demo, setDemo] = useState(false);
 
   // Load (or seed) once on mount — keeps SSR output stable, no hydration flash.
   useEffect(() => {
+    if (readDemoMode()) {
+      setDemo(true);
+      setIdeas(renumber(makeSeed(Date.now())));
+      setHydrated(true);
+      return;
+    }
     let initial: Idea[];
     try {
       const raw = localStorage.getItem(KEY);
@@ -165,24 +194,24 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
     setHydrated(true);
   }, []);
 
-  // Persist after hydration.
+  // Persist after hydration. The demo never persists: it must not overwrite a saved wall.
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || demo) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(ideas));
     } catch {
       /* ignore quota / private-mode errors */
     }
-  }, [ideas, hydrated]);
+  }, [ideas, hydrated, demo]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || demo) return;
     try {
       localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archived));
     } catch {
       /* ignore quota / private-mode errors */
     }
-  }, [archived, hydrated]);
+  }, [archived, hydrated, demo]);
 
   // Mirror the wall to the desktop-wallpaper service, when this browser has
   // opted in. Deliberately a separate effect from the two above so a sync
@@ -192,7 +221,7 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
   // The opt-in is checked BEFORE the dynamic import, so for anyone who has not
   // enabled it the chunk is never even fetched.
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || demo) return;
     let live = true;
     const t = window.setTimeout(() => {
       if (!live) return;
@@ -213,7 +242,17 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
       live = false;
       window.clearTimeout(t);
     };
-  }, [ideas, archived, hydrated]);
+  }, [ideas, archived, hydrated, demo]);
+
+  const exitDemo = useCallback(() => {
+    try {
+      sessionStorage.removeItem(DEMO_KEY);
+    } catch {
+      /* private mode — the reload below still drops the in-memory demo */
+    }
+    // A full load re-runs hydration from the visitor's own storage.
+    window.location.assign("/wall");
+  }, []);
 
   const addIdea = useCallback((input: IdeaInput): Idea => {
     const idea: Idea = {
@@ -366,6 +405,8 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
       ideas,
       archived,
       hydrated,
+      demo,
+      exitDemo,
       addIdea,
       updateIdea,
       deleteIdea,
@@ -380,7 +421,7 @@ export function IdeasProvider({ children }: { children: ReactNode }) {
       toggleStep,
       deleteStep,
     }),
-    [ideas, archived, hydrated, addIdea, updateIdea, deleteIdea, setProgress, bumpProgress, markDone, restoreIdea, deleteArchived, resetToDemo, updatePlan, addStep, toggleStep, deleteStep],
+    [ideas, archived, hydrated, demo, exitDemo, addIdea, updateIdea, deleteIdea, setProgress, bumpProgress, markDone, restoreIdea, deleteArchived, resetToDemo, updatePlan, addStep, toggleStep, deleteStep],
   );
 
   return <IdeasContext.Provider value={value}>{children}</IdeasContext.Provider>;

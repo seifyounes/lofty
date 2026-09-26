@@ -26,8 +26,8 @@ const SEEDS: Seed[] = [
   { name: "Notifications", px: 92, balloon: "sunny-yellow", priority: 11, days: 44 },
 ];
 
-export function makeSeed(): Idea[] {
-  const base = BASE_DATE.getTime();
+/** `base` anchors createdAt and the deadlines; the demo link passes today so no deadline is overdue. */
+export function makeSeed(base: number = BASE_DATE.getTime()): Idea[] {
   return SEEDS.map((s, i) => ({
     id: `seed-${i + 1}`,
     name: s.name,

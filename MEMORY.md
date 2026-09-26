@@ -1,7 +1,7 @@
 # MEMORY.md — Lofty running record
 
 History, decisions, gotchas, and next steps. Stable rules live in `CLAUDE.md`.
-_Last updated 2026-07-02._
+_Last updated 2026-09-26._
 
 ## Where things stand
 - Live, working Next.js app (client-only, `localStorage`). Four screens: `/wall`
@@ -29,6 +29,10 @@ _Last updated 2026-07-02._
 - **Empty first run (2026-07-25)**: new visitors must land on an empty wall, so
   the 11-idea demo seed no longer runs on first load. Seif's own saved ideas were
   untouched — the change only affects a browser with no `lofty.ideas` key.
+- **Demo link (2026-09-26)**: the CV linked `/wall`, which a recruiter sees empty
+  (per-browser storage). Instead of re-seeding first visits, `/demo` opens the sample
+  wall in memory with a "nothing is saved" banner. Tested locally: a saved wall stayed
+  byte-identical through demo edits, reloads kept the demo, and exit restored it.
 - **Phone layouts (2026-07-25)**: 720px breakpoint, `useIsMobile()` + a matching
   CSS media block. The wall got a portrait two-column packed layout and the
   deadlines focus screen a non-`<Stage>` mobile view. See `CLAUDE.md` → Mobile.

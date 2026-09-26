@@ -107,7 +107,13 @@ in sync — `BalloonField`'s `NARROW` uses `containerW > 720` so it agrees.
   contiguous `1..N` on every change.
 - **A new visitor starts with an empty sky.** `useIdeas` seeds `[]` when
   `localStorage` is empty; the 11-idea demo set in `src/lib/seed.ts` is only
-  reachable on purpose via `resetToDemo`. Never re-seed on first load.
+  reachable on purpose via `resetToDemo` or the demo link. Never re-seed on first load.
+- **The demo link (`/demo`, or `?demo` on any page)** shows the 11 sample ideas with
+  deadlines counted from today, from memory only. It never reads or writes
+  `lofty.ideas` / `lofty.archive` and skips the wallpaper sync, so it can't touch a
+  saved wall. A `sessionStorage` flag (`lofty.demo`) keeps it on across navigation
+  and reloads in that tab; the banner's "Start your own wall" clears the flag and
+  reloads `/wall`. This is the link Seif's CV points to.
 
 ## Brand assets
 Source art is in `brand designs/` (transparent RGBA). Balloons use the

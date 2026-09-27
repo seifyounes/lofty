@@ -1,4 +1,4 @@
-// Crop the brand balloon art (transparent RGBA, in `brand designs/balloons/`)
+// Crop the brand balloon art (transparent RGBA, in `design/balloons/`)
 // into uniformly-sized PNGs in `public/balloons/`.
 //
 //   node scripts/process-balloons.js
@@ -13,7 +13,7 @@ const path = require("path");
 
 // Source art: the no-cloud balloons (cloud removed so the priority number + idea
 // name can be drawn legibly in the balloon's centre).
-const SRC = path.join(__dirname, "..", "brand designs", "balloons with no cloud insiide");
+const SRC = path.join(__dirname, "..", "design", "balloons");
 const DEST = path.join(__dirname, "..", "public", "balloons");
 
 // original filename (without .png) -> output id

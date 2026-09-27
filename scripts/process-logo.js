@@ -1,4 +1,4 @@
-// Trim the brand wordmark (`brand designs/logo/logo alone.png`, transparent RGBA)
+// Trim the brand wordmark (`design/logo.png`, transparent RGBA)
 // to its alpha bounding box -> `public/lofty-logo.png`.
 //
 //   node scripts/process-logo.js
@@ -6,7 +6,7 @@ const fs = require("fs");
 const zlib = require("zlib");
 const path = require("path");
 
-const SRC = path.join(__dirname, "..", "brand designs", "logo", "logo alone.png");
+const SRC = path.join(__dirname, "..", "design", "logo.png");
 const DEST = path.join(__dirname, "..", "public", "lofty-logo.png");
 
 // Decode an 8-bit PNG (RGBA ct=6 or RGB ct=2) to a straight RGBA buffer.

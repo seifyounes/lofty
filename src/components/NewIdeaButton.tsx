@@ -1,6 +1,6 @@
 "use client";
 
-// The brand "New idea" button (brand designs/buttons/new-idea-button.svg),
+// The brand "New idea" button,
 // rebuilt as a live element: the gradient colours flow across it, it has a
 // glossy 3D pill body (top sheen + inner shadow + rim + dual glow) and presses
 // in on click. `large` is the empty-state CTA size; `active` rings it on /new.

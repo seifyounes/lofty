@@ -7,9 +7,8 @@ Personal idea tracker. Deflating-balloon metaphor: **size = how big the idea
 is**, **number = priority to finish**. Goal: capture every idea in one place and
 work them in priority order, one focus at a time — not all at once.
 
-Built from the Claude Design handoff `Ideas as deflating balloons-handoff1.zip`
-(kept at repo root). The original design medium was HTML/CSS/JS prototypes; this
-is the real Next.js implementation.
+Built from a Claude Design handoff. The original design medium was HTML/CSS/JS
+prototypes; this is the real Next.js implementation.
 
 ## Stack
 Next.js (App Router) + TypeScript + Tailwind. Client-only, `localStorage`
@@ -113,19 +112,19 @@ in sync — `BalloonField`'s `NARROW` uses `containerW > 720` so it agrees.
   `lofty.ideas` / `lofty.archive` and skips the wallpaper sync, so it can't touch a
   saved wall. A `sessionStorage` flag (`lofty.demo`) keeps it on across navigation
   and reloads in that tab; the banner's "Start your own wall" clears the flag and
-  reloads `/wall`. This is the link Seif's CV points to.
+  reloads `/wall`.
 
 ## Brand assets
-Source art is in `brand designs/` (transparent RGBA). Balloons use the
-**no-cloud** set in `brand designs/balloons with no cloud insiide/` (cloud removed
-so the number + name read clearly in the centre). The uniformly-cropped versions
+Source art is in `design/` (transparent RGBA). Balloons use the **no-cloud** set
+in `design/balloons/` (cloud removed so the number + name read clearly in the
+centre). The uniformly-cropped versions
 in `public/` are generated (speck-removed, cropped to one shared union box) —
 re-run after changing source art or adding a balloon:
 ```
-node scripts/process-balloons.js   # no-cloud balloons -> public/balloons/*
-node scripts/process-logo.js       # logo alone.png    -> public/lofty-logo.png
+node scripts/process-balloons.js   # design/balloons/* -> public/balloons/*
+node scripts/process-logo.js       # design/logo.png   -> public/lofty-logo.png
 ```
-`public/wall-bg.png` is a direct copy of `brand designs/main page background.png`.
+`public/wall-bg.png` is the brand nebula background, committed as-is.
 The set is **50 balloons**: 13 colours + 12 **galaxies** (Andromeda, Black Eye,
 Bode's, Cartwheel, Cigar, Hoag's Object, Pinwheel, Sombrero, Sunflower, Tadpole,
 Triangulum, Whirlpool) + 25 **planets** (Mercury→Pluto, plus 16 exoplanets:
@@ -133,7 +132,7 @@ Proxima b, TRAPPIST-1e, Kepler-22b/-452b/-16b, 51 Pegasi b, Osiris, HD 189733 b,
 WASP-12b/-76b, K2-18b, GJ 1214 b, 55 Cancri e, TOI-700 d, LHS 1140 b, HR 8799 e).
 `process-balloons.js` also **auto-derives each balloon's `swatch`** (glow colour)
 from its art and prints a `swatches JSON` block — paste those into `BALLOONS`. To
-add a balloon: drop the art in `brand designs/balloons with no cloud insiide/`,
+add a balloon: drop the art in `design/balloons/`,
 add it to the `MAP` in `process-balloons.js` and to `BALLOONS` in
 `src/lib/balloons.ts`, then re-run.
 **Renaming a balloon id** (e.g. `yahaf` → `baby-pink`): add the old id to
@@ -142,13 +141,13 @@ idea using it silently falls back to the default colour. `getBalloon` resolves i
 on read and `normalize` rewrites it on load.
 The source art is heavy (~2 MB per crop, ~100 MB total), so the colour picker
 lazy-loads its thumbnails. Serving WebP via `next/image` is the real fix if the
-weight ever bites. (Old cloud versions kept at
-`brand designs/balloons/`; a backup of the previous crops at `./balloons-backup-cloud/`.)
+weight ever bites. Older art (cloud balloons, button and logo variants) and the
+design handoff zip are kept on disk only, in git-ignored `brand designs/` and the
+repo root — never re-add them.
 
 ## Reference
-Design source + screenshots live in the handoff zip (`Ideas as deflating
-balloons-handoff1.zip` at repo root — extract it to reach `project/` and `exports/`;
-the extracted folder is not kept in the repo). Match `exports/01-04.png`.
+Design source + screenshots live in the handoff zip (git-ignored, on disk at the
+repo root — extract it to reach `project/` and `exports/`). Match `exports/01-04.png`.
 
 ## Definition of done
 `npm run build`, `npm run lint`, `npm run typecheck` all clean. Each route checked
@@ -189,16 +188,15 @@ galaxy-purple balloon — the wordmark is unreadable at 16px). It is idempotent:
 on a healthy system it changes nothing and says so.
 
 ## Repo & deploy
-Private GitHub repo `github.com/seifyounes/lofty` (branch `main`; git identity Seif
-Younes). Commit early; **push only when Seif approves** — he tries changes locally
-first. Never commit `.claude/launch.json` (shared/mutated by other sessions,
-machine-specific paths; carries `autoPort: true` so the preview grabs a free port).
+**Public** GitHub repo `github.com/seifyounes/lofty` (branch `main`) — every push is
+visible, so nothing personal or machine-specific goes in a tracked file. Commit
+early; **push only when Seif approves** — he tries changes locally first. `.claude/`,
+`.specify/` and `MEMORY.md` are git-ignored and stay local.
 Vercel auto-deploys from `main` when connected — always test on the **stable
 production URL**, never per-deploy preview URLs (each is a new origin with empty
 `localStorage`, which is why data can look "reset to zero").
 
 ## Out of scope (for now)
-Auth + cloud sync are **planned next** (Supabase magic-link — see `MEMORY.md`).
-Still out: real notifications.
+Auth + cloud sync are planned next. Still out: real notifications.
 
-See `MEMORY.md` for running history, decisions, gotchas, and next steps.
+`MEMORY.md` (local, not in the repo) holds running history, decisions and next steps.

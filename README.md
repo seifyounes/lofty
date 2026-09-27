@@ -1,48 +1,61 @@
 # Lofty — Galaxy of Ideas
 
-A personal idea tracker built on a **deflating-balloon** metaphor. Bottle every
-idea in one place, then work them in priority order instead of drowning in all
-of them at once.
+A personal idea tracker where every idea is a balloon. Capture them all in one
+place, then work them in priority order, one at a time.
 
-- **Balloon size** = how big the idea is.
-- **The number on the balloon** = its priority to finish.
-- On the Focus screen a balloon **deflates** as you make progress and **pops**
-  the moment it's done.
+**[Try the live demo →](https://lofty-two.vercel.app/demo)**
 
-Built from a Claude Design handoff (`Ideas as deflating balloons-handoff1.zip`,
-kept at the repo root as the source of truth).
+![The Lofty wall: eleven numbered balloons floating in a galaxy](docs/wall.png)
 
-## Screens
+- **Balloon size** is how big the idea is.
+- **The number on it** is its priority.
+- A balloon **deflates** as you make progress, and leaves the wall when the idea
+  is finished.
 
-| Route        | Screen          | What it does |
-|--------------|-----------------|--------------|
-| `/wall`      | Idea Galaxy     | Every idea as a glowing balloon floating in the galaxy. |
-| `/list`      | Ideas list      | Balloons stacked biggest → smallest with priority + deadline. Toggle sort. |
-| `/deadlines` | Focus countdown | One idea at a time — deflate as you progress, pop when done. |
-| `/new`       | New idea        | Name it, rate how big it is, pick a balloon colour by name, slide its priority, set a deadline, watch the live preview. |
+## Built with Claude Code
+
+I designed the product and directed the agents; the agents wrote the code. Every
+commit in this repo was written by Claude Code agents working to my direction,
+and the rules I gave them are in [`CLAUDE.md`](CLAUDE.md).
+
+## Routes
+
+| Route        | Screen     | What it does |
+|--------------|------------|--------------|
+| `/wall`      | Wall       | Every active idea as a balloon in a physics field. Drag them, bump them together, click one to focus. |
+| `/list`      | List       | The same ideas as rows, sortable by size or priority. |
+| `/deadlines` | Deadlines  | Ideas sorted by soonest deadline. Opening one shows its countdown, a guided plan and a step checklist that drives the deflate. |
+| `/new`       | New idea   | Name, size, balloon, priority and deadline, with a live preview. |
+| `/archive`   | Quiet Sky  | Finished ideas with their notes, read-only. Restore or delete. |
+| `/settings`  | Settings   | Opt-in link to the desktop wallpaper tool below. |
+| `/demo`      | Demo       | Opens the wall with 11 sample ideas. Nothing is saved. |
 
 `/` redirects to `/wall`.
 
 ## Data
 
-Everything is stored client-side in `localStorage` (key `lofty.ideas`) — no
-accounts, no backend. A fresh visit is seeded with the design's demo ideas so it
-opens looking like the mockups. The store (`src/lib/useIdeas.tsx`) is structured
-so a real backend could drop in behind the same API later.
+Ideas are saved in the browser's `localStorage`. There is no backend, no
+accounts and no sync between devices, so a first visit shows an empty wall
+("Your galaxy is empty"). The demo keeps its sample ideas in memory and never
+reads or writes saved data.
 
-## Tech
+## Stack
 
-Next.js (App Router) · TypeScript · Tailwind CSS · `next/font` (Fredoka +
-Nunito). Desktop-first.
+Next.js 14 (App Router) · TypeScript · Tailwind CSS · matter-js for the wall's
+physics. Deployed on Vercel. Desktop-first, with separate phone layouts below
+720px.
 
-## Run
+There are no automated tests. Changes are checked with `lint`, `typecheck`, a
+production build and by hand in the browser.
+
+## Run locally
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
+npm run dev
 ```
 
-Other scripts:
+Then open <http://localhost:3000>.
 
 ```bash
 npm run build      # production build
@@ -55,24 +68,38 @@ npm run typecheck  # tsc --noEmit
 
 ```
 src/
-├── app/                 # routes: /, /wall, /list, /deadlines, /new + layout, globals, icon
+├── app/            # one folder per route, plus layout and global styles
 ├── components/
-│   ├── Balloon.tsx      # brand balloon PNG + priority/name overlay, deflate, ghost
-│   ├── Galaxy.tsx       # animated starfield + nebula background (non-wall pages)
-│   ├── WallBackground.tsx # wall nebula: Ken Burns + drift + stars + mouse parallax
-│   ├── BalloonField.tsx # physics wall (matter-js): hover in place, drag, collide
-│   ├── AppShell.tsx     # nav (brand logo) + per-screen overlay / background image
-│   └── Stage.tsx        # scales fixed-coordinate screens to fit width
+│   ├── BalloonField.tsx    # the physics wall (matter-js)
+│   ├── Balloon.tsx         # balloon image + number/name overlay, deflate
+│   ├── IdeaBreakdown.tsx   # plan prompts + step checklist
+│   ├── WallBackground.tsx  # animated nebula behind the wall
+│   ├── Galaxy.tsx          # animated starfield behind the other screens
+│   ├── AppShell.tsx        # navigation and page frame
+│   ├── NewIdeaButton.tsx   # the animated "New idea" button
+│   └── Stage.tsx           # scales fixed-size screens to the window
 └── lib/
-    ├── types.ts         # Idea model
-    ├── balloons.ts      # the brand balloon set (id, name, src, swatch)
-    ├── seed.ts          # the 11 demo ideas
-    ├── format.ts        # size ↔ px + date helpers
-    └── useIdeas.tsx     # localStorage-backed store (context + hook)
+    ├── useIdeas.tsx        # the store: every read and write of ideas
+    ├── types.ts            # the Idea model
+    ├── balloons.ts         # the 50 balloons (id, name, image, glow colour)
+    ├── format.ts           # size, date and deflate helpers
+    ├── seed.ts             # the 11 demo ideas
+    ├── useMediaQuery.ts    # phone/desktop switch
+    └── wallSync.ts         # client for the wallpaper tool
+design/             # source artwork for the balloons and logo
+scripts/            # crop the source artwork into public/
+tools/wallpaper-sync/   # optional desktop wallpaper tool (Windows)
 ```
 
-## Brand assets
+## Desktop wallpaper (optional, Windows)
 
-Balloons, logo, and the wall background come from `brand designs/`. The
-transparent, cropped versions in `public/` are generated by
-`scripts/process-balloons.js` and `scripts/process-logo.js` (see `CLAUDE.md`).
+`tools/wallpaper-sync/` mirrors the wall onto a Windows desktop through
+[Lively Wallpaper](https://www.rocksdanister.com/lively/). It is a small local
+service on `127.0.0.1` that is off unless you install it and switch it on in
+`/settings`. The web app works without it.
+
+## License
+
+Code is released under the [MIT License](LICENSE). The balloon, logo and
+background artwork in `design/` and `public/` is not covered by it; all rights
+to the artwork are reserved.

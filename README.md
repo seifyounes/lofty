@@ -18,6 +18,8 @@ I designed the product and directed the agents; the agents wrote the code. Every
 commit in this repo was written by Claude Code agents working to my direction,
 and the rules I gave them are in [`CLAUDE.md`](CLAUDE.md).
 
+The balloon artwork is my own design. The originals are in [`design/balloons/`](design/balloons).
+
 ## Routes
 
 | Route        | Screen     | What it does |

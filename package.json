@@ -1,7 +1,14 @@
 {
   "name": "lofty",
   "version": "0.1.0",
+  "description": "Personal idea tracker where ideas are balloons that deflate as you make progress",
   "private": true,
+  "license": "MIT",
+  "homepage": "https://lofty-two.vercel.app/demo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seifyounes/lofty.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

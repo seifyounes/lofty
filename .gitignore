@@ -30,3 +30,12 @@ next-env.d.ts
 # local backups & scratch (kept on disk, not versioned)
 /balloons-backup-cloud
 /bugs
+
+# agent tooling and working notes (machine-specific)
+.claude/
+.specify/
+/MEMORY.md
+
+# design leftovers the app and scripts don't read (source art lives in /design)
+/brand designs/
+/*.zip

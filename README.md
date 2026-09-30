@@ -1,4 +1,4 @@
-# Lofty — Galaxy of Ideas
+# Lofty, a galaxy of ideas
 
 A personal idea tracker where every idea is a balloon. Capture them all in one
 place, then work them in priority order, one at a time.
@@ -18,7 +18,7 @@ I designed the product and directed the agents; the agents wrote the code. Every
 commit in this repo was written by Claude Code agents working to my direction,
 and the rules I gave them are in [`CLAUDE.md`](CLAUDE.md).
 
-The balloon artwork is my own design. The originals are in [`design/balloons/`](design/balloons).
+The balloon artwork was made for this app. The originals are in [`design/balloons/`](design/balloons).
 
 ## Routes
 

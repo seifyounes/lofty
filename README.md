@@ -12,11 +12,11 @@ place, then work them in priority order, one at a time.
 - A balloon **deflates** as you make progress, and leaves the wall when the idea
   is finished.
 
-## Built with Claude Code
+## Built with AI coding agents
 
 I designed the product and directed the agents; the agents wrote the code. Every
-commit in this repo was written by Claude Code agents working to my direction,
-and the rules I gave them are in [`CLAUDE.md`](CLAUDE.md).
+commit in this repo was written by AI coding agents working to my direction,
+and the rules I gave them are in [the project rules file](CLAUDE.md).
 
 The balloon artwork was made for this app. The originals are in [`design/balloons/`](design/balloons).
 
